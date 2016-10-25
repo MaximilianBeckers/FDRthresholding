@@ -1,0 +1,87 @@
+clear all;
+
+%get images
+[FileNameMRC,PathNameMRC] = uigetfile('Please select the image files');
+
+%create gui and ask for input
+prompt = {'Enter FDR:', 'min. Size [#Pixel]:', 'binning Factor'};
+dlg_title = 'Input';
+num_lines = 1;
+defaultans = {'0.1','10', '10'};
+answer = inputdlg(prompt, dlg_title, num_lines, defaultans);
+FDRval = str2num(answer{1});
+minSize = str2num(answer{2});
+binFac = str2num(answer{3}); 
+
+%************************************************************************
+%*************************** read movies ********************************
+%************************************************************************
+
+%read first parts of the movie
+[map, s] = ReadMRC(fullfile(PathNameMRC, FileNameMRC), 1, 1);
+
+%define binned map
+mapBinned = zeros(floor(s.nx/binFac), floor(s.ny/binFac), s.nz);
+binnedMapSize = size(mapBinned);
+
+%do binning
+mapBinned( :, :, 1) = binningImage(map( :, :, 1), binFac);
+mu = mean(mean(mapBinned));
+
+%normalization
+variance = var(var(mapBinned));
+mapBinned( :, :, 1) = (mapBinned( :, :, 1) - mu)/sqrt(variance);
+
+%do smoothing with gaussian kernel, i.e. low pass filter
+sigma = 3;
+halfwidth = 3 * sigma;
+[xx, yy] = meshgrid(-halfwidth:halfwidth, -halfwidth:halfwidth);
+smoothMat = exp(-1/(2*sigma^2) * (xx.^2 + yy.^2));
+smoothMat = sum(sum(smoothMat)) * smoothMat;
+mapBinned(:, :, 1) = conv2(mapBinned(:, :, 1), smoothMat, 'same');
+
+for i = 2:s.nz
+	%read frame
+	[map, ~] = ReadMRC(fullfile(PathNameMRC, FileNameMRC), i, i);
+	
+	%do binning
+	mapBinned(:, :, i) = binningImage(map(:, :, i), binFac );
+	
+	%normalization
+	mu = mean(mean(mapBinned));
+	variance = var(var(mapBinned));
+	mapBinned( :, :, i) = (mapBinned( :, :, i) - mu)/sqrt(variance);
+	
+	%smoothing
+	mapBinned(:, :, i) = conv2(mapBinned(:, :, i), smoothMat, 'same');
+end
+
+%now perform pixel wise t-tests
+pValues = zeros((binnedMapSize(1)*binnedMapSize(2)),1);
+for i = 1:binnedMapSize(1)
+	for j = 1:binnedMapSize(2)
+		%now calculate t-image, i.e. perform t test for each time series under H0 = 0
+		[~,p] = ttest(mapBinned(i,j,:), 0, 0.05, 'left');	
+		pValues((i-1)*width+j) = p;
+	end
+end
+
+%do fdr control
+[FDR] = mafdr(pValues, 'BHFDR', true);
+
+%transform to binary by means of the adjusted p-values
+binImage = zeros(binnedMapSize(1), binnedMapSize(2));
+for i = 1:binnedMapSize(1)
+	for j = 1:binnedMapSize(2)
+		if( FDR((i-1)*width+j) < FDRval )				
+            binImage(i,j) = 1;
+		else
+			binImage(i,j) = 0;
+		end	
+	end
+end
+
+binImage = compAnalysis( binImage, minSize, true);
+
+%finally show the new image
+imshow(binImage', 'DisplayRange', []);
