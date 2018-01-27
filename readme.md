@@ -83,4 +83,22 @@ If your map contains a huge background, i.e. small particle compared to the box 
 order to get more accurate estimates of the background noise distribution.
 
 
+## Demonstration with TRPV1 EMD5778
 
+We will demonstrate the simplest case with a 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
+
+Download the map by clicking on: 
+
+ftp://ftp.wwpdb.org/pub/emdb/structures/EMD-5778/other/TRPV1_sharpened_-100_3.4A.map.gz
+
+Go into the respective directory and unzip the file. 
+
+```
+gunzip TRPV1_sharpened_-100_3.4A.map.gz
+```
+
+We are ready to generate the confidence map by
+
+```
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
+```
