@@ -30,7 +30,13 @@ If you want to use the LocScale feature, you should have a running LocScale vers
 
 ## How to use
 
+The simplest, and probably most important case, is the generation of a confidence map of a simple cryoEM density without incorporation of local resolution or atomic model information.
 
+```
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
+```
+
+The output will be the corresponding confidence map ( yourMap_confidenceMap.mrc ) and a diagnostic image (diag_image.pdf), that shows three slices thorugh the map together with the regions used for noise estimation. In order to get good estimates of the background noise distribution, you should make sure that the region contains just noise and no particle.
 
 
 
