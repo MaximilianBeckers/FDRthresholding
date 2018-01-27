@@ -83,7 +83,7 @@ If your map contains a huge background, i.e. small particle compared to the box 
 order to get more accurate estimates of the background noise distribution.
 
 
-Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate the final confidence will be too!
+Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too!
 
 ## Demonstration with TRPV1 EMD5778
 
