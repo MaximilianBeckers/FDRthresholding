@@ -11,20 +11,21 @@ Additional postprocessing like local filtering or local amplitude scaling (LocSc
 
 The software is written in Python and itself dependent on EMAN2, NumPy and SciPy libraries. 
 
-For incorporation of the local ampltidue scaling (LocScale) procedue, additional libraries are needed, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
+For incorporation of the local ampltidue scaling (LocScale) procedue, additional LocScale libraries are needed, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
 
 
 ### Installing
 
 The software consists of four scripts, FDRcontrol.py, mapUtil.py, FDRUtil.py and locscaleUtil.py, that just have to be copied to your computer.
 
-Once a working EMAN2 installation is available http://blake.bcm.edu/emanwiki/EMAN2, the software can be simply run by using your Python version that comes with EMAN2:   
+Once you have a working EMAN2 installation ( http://blake.bcm.edu/emanwiki/EMAN2 ), the software can be simply run by using your Python version that comes with EMAN2:   
 
 For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMAN2 python installation: 
 ```
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
+If you want to use LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.
 
 
 ## Running the tests
