@@ -52,11 +52,22 @@ A corresponding local resolution map can be supplied to the program by -locResMa
 
 The ouput will the be a locally filtered map together with the diagnostic image and the confidence map. Adjustment of the noise estimation region can be done accordingly.
 
-For example:
+Example usage:
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap.mrc
 ```
 
 ### Incorporation of local amplitude scaling
 
-If 
+LocScale inside FDRcontrol.py can be used by supplying a model map with -mm youModelMap.mrc, where the model map is generated in the LocScale workflow. For usage of parallelisation, -mpi can be specified. The window size can be specified with -w windowSize,
+ and is also the size of the region used for noise estimation.
+The ouput will the be the locally scaled map together with the diagnostic image and the confidence map. 
+
+
+Example usage:
+
+```
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
+```
+
+
