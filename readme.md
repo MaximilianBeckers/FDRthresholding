@@ -27,7 +27,7 @@ For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMA
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
- 
+
 
 ## How to use
 
@@ -46,7 +46,11 @@ For example:
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -boxNoise 50 50 120
 ```
 
+### Incorporation of local resolution information
 
+A corresponding local resolution map can be supplied to the program by -locResMap yourLocalResolutionMap.mrc .
+
+The ouput will the be a locally filtered map together with the diagnostic image and the confidence map.
 
 
 ### Break down into end to end tests
