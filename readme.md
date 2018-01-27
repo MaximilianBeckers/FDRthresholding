@@ -1,6 +1,6 @@
-# Project Title
+# False discovery rate control of cryo-EM maps
 
-One Paragraph of project description goes here
+Confidence maps are complementary maps generated from cryo-EM maps by means of statistical hypothesis testing and subsequent FDR control. They allow thresholding of EM maps based on the expected amount of background noise. 
 
 ## Getting Started
 
