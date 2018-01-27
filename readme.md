@@ -25,12 +25,15 @@ For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMA
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
-If you want to use LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.
+If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
 
-## Running the tests
+## How to use
 
-Explain how to run the automated tests for this system
+
+
+
+
 
 ### Break down into end to end tests
 
