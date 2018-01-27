@@ -70,4 +70,17 @@ Example usage:
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
 ```
 
+## Instructions for use
+
+The programs requires a unmasked map as input. Masking will make the noise estimation impossible.
+
+It is critical that the regions used for noise estimation do not fall into the paticle of interest. While in single particle analysis (SPA), 
+the data generating process makes choice of the regions straightforward, sub-tomogram-averaged structures usually require specification of this region from the user.
+
+Always have a look in the diagnostic image! 
+
+If your map contains a huge background, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
+order to get more accurate estimates.
+
+
 
