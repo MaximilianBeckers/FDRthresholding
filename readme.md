@@ -80,7 +80,7 @@ the data generating process makes choice of the regions straightforward, sub-tom
 Always have a look in the diagnostic image! 
 
 If your map contains a huge background, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
-order to get more accurate estimates.
+order to get more accurate estimates of the background noise distribution.
 
 
 
