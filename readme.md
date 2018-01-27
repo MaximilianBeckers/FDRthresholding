@@ -10,6 +10,9 @@ Additional postprocessing like local filtering or local amplitude scaling (LocSc
 ### Prerequisites
 
 The software is written in Python and itself dependent on EMAN2 libraries. 
+For incorporation of the LocScale procedure, further dependencies are required, as described here: https://git.embl.de/jakobi/LocScale/wikis/home
+
+
 
 ### Installing
 
