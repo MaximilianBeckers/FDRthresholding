@@ -27,7 +27,7 @@ For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMA
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
-
+Installation time is dependent on the installation time you need for LocScale and EMAN2. The presented algorithms are basically just scripts that have to be copied to the computer and do not require any further installation.
 
 ## How to use
 
@@ -85,7 +85,7 @@ order to get more accurate estimates of the background noise distribution.
 
 ## Demonstration with TRPV1 EMD5778
 
-We will demonstrate the simplest case with a 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
+We will demonstrate the the procedure with a 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
 
 Download the map by clicking on: 
 
@@ -102,3 +102,5 @@ We are ready to generate the confidence map by
 ```
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
 ```
+
+The expected run time on normal desktop computer should be around 1-2 minutes for this example.
