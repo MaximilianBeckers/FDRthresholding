@@ -27,6 +27,7 @@ For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMA
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
+Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the default regions for noise estimation fall into noise, you can specify the center of region of your choice with -boxNoise 
 
 ## How to use
 
