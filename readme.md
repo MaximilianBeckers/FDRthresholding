@@ -27,7 +27,7 @@ For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMA
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
-Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the default regions for noise estimation fall into noise, you can specify the center of region of your choice with -boxNoise 
+ 
 
 ## How to use
 
@@ -39,7 +39,7 @@ The simplest, and probably most important case, is the generation of a confidenc
 
 The output will be the corresponding confidence map ( yourMap_confidenceMap.mrc ) and a diagnostic image (diag_image.pdf), that shows three slices thorugh the map together with the regions used for noise estimation. In order to get good estimates of the background noise distribution, you should make sure that the region contains just noise and no particle.
 
-
+Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the default regions for noise estimation fall into noise, you can specify the center of region of your choice with -noiseBox x y z .
 
 
 ### Break down into end to end tests
