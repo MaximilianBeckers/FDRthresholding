@@ -83,6 +83,8 @@ If your map contains a huge background, i.e. small particle compared to the box 
 order to get more accurate estimates of the background noise distribution.
 
 
+Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate the final confidence will be too!
+
 ## Demonstration with TRPV1 EMD5778
 
 We will demonstrate the the procedure with a 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
