@@ -81,8 +81,8 @@ the data generating process makes choice of the regions straightforward, sub-tom
 If your map contains a huge background, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
 order to get more accurate estimates of the background noise distribution.
 
-**Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too!
-Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.**
+Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too!
+Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
 
 ## Demonstration with TRPV1 EMD5778
 
