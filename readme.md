@@ -84,6 +84,7 @@ order to get more accurate estimates of the background noise distribution.
 
 
 Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too!
+Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct. 
 
 ## Demonstration with TRPV1 EMD5778
 
