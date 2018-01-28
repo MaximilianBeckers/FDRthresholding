@@ -1,7 +1,7 @@
 # False discovery rate control of cryo-EM maps
 
 Confidence maps are complementary maps generated from cryo-EM maps by means of statistical hypothesis testing and subsequent FDR control. They allow thresholding of EM maps based on the expected amount of background noise visible at the respective threshold and thus allow rigorous error assesment of visible features in the density. 
-Additional postprocessing like local filtering or local amplitude scaling (LocScale) can be incorporated in the framework in order to increase the power.
+Additional postprocessing like local filtering or local amplitude scaling (LocScale) can be incorporated in the framework in order to increase the stattistical power.
 
 
 ## Getting Started
