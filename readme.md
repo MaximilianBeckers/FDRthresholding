@@ -1,7 +1,7 @@
 # False discovery rate control of cryo-EM maps
 
-Confidence maps are complementary maps generated from cryo-EM maps by means of statistical hypothesis testing and subsequent FDR control. They allow thresholding of EM maps based on the expected amount of background noise visible at the respective threshold and thus allow rigorous error assesment of visible features in the density. 
-Additional postprocessing like local filtering or local amplitude scaling (LocScale) can be incorporated in the framework in order to increase the stattistical power.
+Confidence maps are complementary maps generated from cryo-EM maps by means of statistical hypothesis testing and subsequent FDR control. They allow thresholding of EM maps based on the expected amount of background noise visible at the respective threshold and thus allow rigorous error assessment of visible features in the density. 
+Additional post-processing like local filtering or local amplitude scaling (LocScale) can be incorporated in the framework in order to increase the statistical power.
 
 
 ## Getting Started
@@ -9,14 +9,14 @@ Additional postprocessing like local filtering or local amplitude scaling (LocSc
 
 ### Prerequisites
 
-The software is written in Python and itself dependent on EMAN2, NumPy and SciPy libraries. 
+The software is written in Python and itself dependent on EMAN2 and NumPy libraries. 
 
-For incorporation of the local ampltidue scaling (LocScale) procedue, additional LocScale libraries are needed, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
+For incorporation of the local amplitude scaling (LocScale) procedue, additional libraries as SPARX, SciPy and mpi4py are needed, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
 
 
 ### Installing
 
-The software consists of four scripts, FDRcontrol.py, mapUtil.py, FDRUtil.py and locscaleUtil.py, that just have to be copied to your computer.
+The software consists of four scripts, FDRcontrol.py, mapUtil.py, FDRutil.py and locscaleUtil.py, that just have to be copied to your computer.
 
 Once you have a working EMAN2 installation ( http://blake.bcm.edu/emanwiki/EMAN2 ), the software can be simply run by using your Python version that comes with EMAN2:   
 
@@ -31,13 +31,13 @@ Installation time is dependent on the installation time you need for LocScale an
 
 ## How to use
 
-The simplest, and probably most important case, is the generation of a confidence map of a simple cryoEM density without incorporation of local resolution or atomic model information.
+The simplest, and probably most important case, is the generation of a confidence map from a simple cryoEM density without incorporation of local resolution or atomic model information.
 
 ```
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
-The output will be the corresponding confidence map ( yourMap_confidenceMap.mrc ) and a diagnostic image (diag_image.pdf), that shows three slices thorugh the map together with the regions used for noise estimation. In order to get good estimates of the background noise distribution, you should make sure that the region contains just noise and no particle.
+The output will be the corresponding confidence map ( yourMap_confidenceMap.mrc ) and a diagnostic image (diag_image.pdf), that shows three slices thorugh the map together with the regions used for noise estimation. In order to get good estimates of the background noise distribution, you should make sure that the region contains just noise and no signal of the particle.
 
 Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the default regions for noise estimation fall into noise, you can specify the center of region of your choice with -noiseBox x y z .
 For example:
@@ -50,7 +50,7 @@ For example:
 
 A corresponding local resolution map can be supplied to the program by -locResMap yourLocalResolutionMap.mrc .
 
-The ouput will the be a locally filtered map together with the diagnostic image and the confidence map. Adjustment of the noise estimation region can be done accordingly.
+The ouput will be a locally filtered map together with the diagnostic image and the confidence map. Adjustment of the noise estimation region can be done accordingly.
 
 Example usage:
 ```
@@ -61,7 +61,7 @@ Example usage:
 
 LocScale inside FDRcontrol.py can be used by supplying a model map with -mm youModelMap.mrc, where the model map is generated in the LocScale workflow. For usage of parallelisation, -mpi can be specified. The window size can be specified with -w windowSize,
  and is also the size of the region used for noise estimation.
-The ouput will the be the locally scaled map together with the diagnostic image and the confidence map. 
+The ouput will be the locally scaled map together with the diagnostic image and the confidence map. 
 
 Example usage:
 
@@ -71,22 +71,22 @@ Example usage:
 
 ## Instructions for use
 
-The programs requires a unmasked map as input. Masking will make the noise estimation impossible.
+The programs require an unmasked map as input. Masking will make the noise estimation impossible.
 
-It is critical that the regions used for noise estimation do not fall into the paticle of interest. While in single particle analysis (SPA), 
+It is critical that the regions used for noise estimation do not fall into the particle of interest. While in single particle analysis (SPA), 
 the data generating process makes choice of the regions straightforward, sub-tomogram-averaged structures usually require specification of this region from the user.
 
-**Always have a look in the diagnostic image!** 
+**Always have a look in the diagnostic image.** 
 
-If your map contains a huge background, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
+If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
 order to get more accurate estimates of the background noise distribution.
 
-Both usage of local resolution and atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too!
+Be aware, inclusion of either local resolution and/or atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too.
 Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
 
 ## Demonstration with TRPV1 EMD5778
 
-We will demonstrate the the procedure with a 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
+We will demonstrate the procedure using the 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
 
 Download the map by clicking on: 
 
