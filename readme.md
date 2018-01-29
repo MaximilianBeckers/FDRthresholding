@@ -11,7 +11,7 @@ Additional post-processing like local filtering or local amplitude scaling (LocS
 
 The software is written in Python and itself dependent on EMAN2 and NumPy libraries. 
 
-For incorporation of the local amplitude scaling (LocScale) procedue, additional libraries as SPARX, SciPy and mpi4py are needed, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
+For incorporation of the local amplitude scaling (LocScale) procedue, mpi4py is needed in order to use parallelisation, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
 
 
 ### Installing
