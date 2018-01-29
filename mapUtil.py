@@ -33,7 +33,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
 	locResMapData = EMNumPy.em2numpy(locResMap);
 
 	#set all resoltuon lower than 2.1 to 2.1
-	locResMapData[locResMapData > 2.5] = 2.5;
+	#locResMapData[locResMapData > 2.5] = 2.5;
 
 	#transform to abosulte frequency units(see http://sparx-em.org/sparxwiki/absolute_frequency_units)
 	locResMapData = np.divide(apix, locResMapData);
@@ -41,7 +41,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
 	#round to 3 decimals
 	locResMapData = np.around(locResMapData, 3);	
 
-	#set resolution search range, 2 decimals exact
+	#set resolution search range, 3 decimals exact
 	locResArray = np.arange(0, 0.5 , 0.001);
 
 	counter = 0;
