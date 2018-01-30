@@ -41,7 +41,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
 	#round to 3 decimals
 	locResMapData = np.around(locResMapData, 3);	
 
-	#set resolution search range, 2 decimals exact
+	#set resolution search range, 3 decimals exact
 	locResArray = np.arange(0, 0.5 , 0.001);
 
 	counter = 0;
