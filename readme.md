@@ -84,8 +84,8 @@ order to get more accurate estimates of the background noise distribution.
 Be aware, inclusion of either local resolution and/or atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too.
 Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
 
-As confidence maps are almost binary and have huge contrast, they might look very sharp and edged. For visualization this can be easily for example in Chimera by 
-turning on surface smoothing  in the Volume Viewer in Features --> Sufrace and Mesh options.
+**As confidence maps are almost binary and have huge contrast, they might look very sharp and edged. For visualization this can be easily corrected, for example in Chimera by 
+turning on surface smoothing in the Volume Viewer in Features --> Sufrace and Mesh options.**
 
 ## Demonstration with TRPV1 EMD5778
 
