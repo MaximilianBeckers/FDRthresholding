@@ -75,6 +75,7 @@ The programs require an unmasked map as input. Masking will make the noise estim
 
 It is critical that the regions used for noise estimation do not fall into the particle of interest. While in single particle analysis (SPA), 
 the data generating process makes choice of the regions straightforward, sub-tomogram-averaged structures usually require specification of this region from the user.
+The region can be identified by means of the slice-views in the diagnostic image of a first run with default parameters, and then adjust the noise region for a subsequent run.
 
 **Always have a look in the diagnostic image.** 
 
