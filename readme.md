@@ -69,7 +69,7 @@ Example usage:
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
 ```
 
-## Instructions for use
+## Instructions for use and important tips
 
 The programs require an unmasked map as input. Masking will make the noise estimation impossible.
 
