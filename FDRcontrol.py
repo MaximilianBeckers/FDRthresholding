@@ -1,4 +1,3 @@
-#!/programs/x86_64-linux/eman2/2.2/bin/python
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group (2017)
 
 #import some stuff
