@@ -43,7 +43,7 @@ Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the
 For example:
 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -boxNoise 50 50 120
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -noiseBox 50 50 120
 ```
 
 ### Incorporation of local resolution information
