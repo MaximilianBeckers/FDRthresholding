@@ -437,7 +437,7 @@ def launch_amplitude_scaling(args):
 
         #write the volumes    
         LocScaleVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc')
-        qVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, qVol, splitFilename[0] + '_locscale' + '_confidenceMap.mrc')
+        qVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc')
         #meanVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, meanVol, 'meanVol.mrc')
         #varVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, varVol, 'varVol.mrc') 
 
@@ -471,8 +471,8 @@ def launch_amplitude_scaling(args):
 			#write the volumes
             LocScaleVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc')
             qVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc')
-            meanVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, meanVol, 'meanVol.mrc')
-            varVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, varVol, 'varVol.mrc') 
+            #meanVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, meanVol, 'meanVol.mrc')
+            #varVol = write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, varVol, 'varVol.mrc') 
 
 			#make diagnostic plot and print summary 
             makeDiagnosticPlot(emmap, wn, wn, True, boxCoord);   

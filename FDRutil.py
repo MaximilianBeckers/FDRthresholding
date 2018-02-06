@@ -276,14 +276,14 @@ def printSummary(args, time):
 	#print output filenames
 	if args.model_map is not None:
 		splitFilename = os.path.splitext(os.path.basename(args.em_map));
-		output = "Output LocScale map: " + splitFilename[0] + "_locscale" + ".mrc";
+		output = "Output LocScale map: " + splitFilename[0] + "_scaled" + ".mrc";
 		print(output);
-		output = "Output confidence Map: " + splitFilename[0] + "_locscale_confidenceMap" + ".mrc";
+		output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 		print(output);
 	else:
 		if args.locResMap is not None:
 			splitFilename = os.path.splitext(os.path.basename(args.em_map));
-			output = "Output locally filtered map: " + splitFilename[0] + "_localFilt" + ".mrc";
+			output = "Output locally filtered map: " + splitFilename[0] + "_locFilt" + ".mrc";
 			print(output);
 			output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 			print(output);
