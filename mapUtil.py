@@ -285,7 +285,7 @@ def readAndFlattenImageStack(filename):
 	return imageStackData;
 
 #---------------------------------------------------------------------------------
-def addNoiseToMap(map, varNoise):
+def addNoiseToMapSolvent(map, varNoise):
 
 	#*********************************
 	#****** add Noise To Map *********
@@ -293,6 +293,21 @@ def addNoiseToMap(map, varNoise):
 
 	mapData = np.copy(EMNumPy.em2numpy(map));
 	noiseMap = np.random.randn(map.get_xsize(), map.get_ysize(), map.get_xsize())*math.sqrt(varNoise);
+	
+	sizeMap = np.array([map.get_xsize(), map.get_ysize(), map.get_zsize()]);
+
+	mask = EMData();	
+	mask.set_size(sizeMap[0], sizeMap[1], sizeMap[2]);
+	mask.to_zero(); 
+	sphere_radius = (np.min(sizeMap)/2.0 - 60); 
+	mask.process_inplace("testimage.circlesphere", {"radius":sphere_radius});
+	maskData = np.copy(EMNumPy.em2numpy(mask));
+	maskData[maskData > 0] = 10;
+	maskData[maskData <= 0] = 0;
+	maskData[maskData == 0] = 1;
+	maskData[maskData == 10] = 0;
+	noiseMap = noiseMap*maskData;
+
 	mapData = mapData + noiseMap;
 	map = EMNumPy.numpy2em(np.copy(mapData));
 

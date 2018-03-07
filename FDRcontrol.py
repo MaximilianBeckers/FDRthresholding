@@ -43,8 +43,8 @@ cmdl_parser.add_argument('-mpi', action='store_true', default=False,
 						help="Set this flag if MPI should be used for the local amplitude scaling");
 cmdl_parser.add_argument('-o', '--outputFilename', metavar="output.mrc", type=str, required=False,
 						help="Name of the output");
-#cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
-#						help="noise with mean 0 and the given variance will be added on map");
+cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
+						help="noise with mean 0 and the given variance will be added on map");
 cmdl_parser.add_argument('-noiseBox', metavar="[x, y, z]", nargs='+', type=int, required=False,
 						help="Box coordinates for noise estimation");
 
@@ -76,8 +76,8 @@ def main():
 		apix = args.apix;
 
 		#add noise if wished
-		#if args.varNoise is not None:
-		#	map = addNoiseToMap(map, args.varNoise);
+		if args.varNoise is not None:
+			map = addNoiseToMapSolvent(map, args.varNoise);
 		
 		#get boxCoordinates
 		if args.noiseBox is None:
