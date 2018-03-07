@@ -140,7 +140,8 @@ def calcQMap(map, mean, var, mask, method, test):
 		var[var==1000.0] = 0.0;
 		#upadte the mask, necessary as resmap is masking as well
 		mask = np.multiply(mask,var);
-
+	
+	tMap[tMap<0] = 10000000.0*np.min(tMap);
 
 	#calculate the p-Values
 	print('Calculating p-Values ...');
@@ -152,6 +153,7 @@ def calcQMap(map, mean, var, mask, method, test):
 
 	pMapRight = 1.0 - (0.5*(1.0 + erfMap)); 
 	pMapLeft = (0.5*(1.0 + erfMap));
+
 
 
 	if test == 'twoSided':
@@ -274,21 +276,24 @@ def printSummary(args, time):
 		print(output);
 	
 	#print output filenames
-	if args.model_map is not None:
+	if args.outputFilename is not None:
+		splitFilename = os.path.splitext(os.path.basename(args.outputFilename));
+	else:
 		splitFilename = os.path.splitext(os.path.basename(args.em_map));
+	
+	
+	if args.model_map is not None:
 		output = "Output LocScale map: " + splitFilename[0] + "_scaled" + ".mrc";
 		print(output);
 		output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 		print(output);
 	else:
 		if args.locResMap is not None:
-			splitFilename = os.path.splitext(os.path.basename(args.em_map));
 			output = "Output locally filtered map: " + splitFilename[0] + "_locFilt" + ".mrc";
 			print(output);
 			output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 			print(output);
 		else:
-			splitFilename = os.path.splitext(os.path.basename(args.em_map));
 			output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 			print(output);
 
