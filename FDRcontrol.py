@@ -43,11 +43,14 @@ cmdl_parser.add_argument('-mpi', action='store_true', default=False,
 						help="Set this flag if MPI should be used for the local amplitude scaling");
 cmdl_parser.add_argument('-o', '--outputFilename', metavar="output.mrc", type=str, required=False,
 						help="Name of the output");
-cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
-						help="noise with mean 0 and the given variance will be added on map");
+#cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
+#						help="noise with mean 0 and the given variance will be added to the solvent area");
 cmdl_parser.add_argument('-noiseBox', metavar="[x, y, z]", nargs='+', type=int, required=False,
-						help="Box coordinates for noise estimation");
-
+							help="Box coordinates for noise estimation");
+cmdl_parser.add_argument('-meanMap', '--meanMap', type=str, required=False,
+                            help="3D map of noise means to be used for FDR control");
+cmdl_parser.add_argument('-varianceMap', '--varianceMap', type=str, required=False,
+                            help="3D map of noise variances to be used for FDR control");
 
 #************************************************************
 #********************** main function ***********************
@@ -76,8 +79,8 @@ def main():
 		apix = args.apix;
 
 		#add noise if wished
-		if args.varNoise is not None:
-			map = addNoiseToMapSolvent(map, args.varNoise);
+		#if args.varNoise is not None:
+		#	map = addNoiseToMapSolvent(map, args.varNoise);
 		
 		#get boxCoordinates
 		if args.noiseBox is None:
@@ -123,7 +126,24 @@ def main():
 		if args.locResMap is None: #if no local Resolution map is given,don't do any filtration
 			mapData = EMNumPy.em2numpy(map);
 			mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
-			output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var); 
+			
+			#if varianceMap is given, use it
+			if args.varianceMap is not None:
+				varMap = EMData();
+				varMap.read_image(args.varianceMap);
+				var = np.copy(EMNumPy.em2numpy(varMap));
+			
+			#if meanMap is given, use it
+			if args.meanMap is not None:
+				meanMap = EMData();
+				meanMap.read_image(args.meanMap);
+				mean = np.copy(EMNumPy.em2numpy(meanMap));
+
+			if np.isscalar(mean) and np.isscalar(var):	
+				output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var); 
+			else:
+				output = "Using user provided noise statistics"; 
+	
 			print(output);
 
 		else: #do localFiltration and estimate statistics from this map
