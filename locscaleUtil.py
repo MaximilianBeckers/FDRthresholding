@@ -406,21 +406,23 @@ def write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pa
 
 def launch_amplitude_scaling(args):    	
 
-
     startTime = time.time()
     emmap, modmap, mask, wn, window_bleed_and_pad, FDRmethod, locFilt, locResMap, boxCoord = prepare_mask_and_maps_for_scaling(args)
-     
+
     meanNoise, varNoise, sample = estimateNoiseFromMap(EMNumPy.em2numpy(emmap), wn, boxCoord)
-   
+
     #set output filenames
     if args.outputFilename is not None:
         splitFilename = os.path.splitext(os.path.basename(args.outputFilename))
-    else:	
+    else:
         splitFilename = os.path.splitext(os.path.basename(args.em_map))
-	
+
+    if args.testProc is not None:
+        testProc = args.testProc
+    else:
+        testProc = 'rightSided'
 
     if not args.mpi:
-
         LocScaleVol, meanVol, varVol = run_window_function_including_scaling(emmap, modmap, mask, wn, args.apix, locFilt, locResMap, boxCoord)
         print("Local amplitude scaling finished.")
 
@@ -431,7 +433,7 @@ def launch_amplitude_scaling(args):
         LocScaleVolData = EMNumPy.em2numpy(LocScaleVol)
         maskData = EMNumPy.em2numpy(mask)
 
-        qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, 'rightSided')
+        qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, testProc)
         qVolData = np.subtract(np.ones(qVolData.shape), qVolData)
         qVol = EMNumPy.numpy2em(qVolData)
 
@@ -463,7 +465,7 @@ def launch_amplitude_scaling(args):
             LocScaleVolData = EMNumPy.em2numpy(LocScaleVol)
             maskData = EMNumPy.em2numpy(mask)
 
-            qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, 'rightSided')
+            qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, testProc)
             #invert qMap for visualization tools
             qVolData = np.subtract(np.ones(qVolData.shape), qVolData)
             qVol = EMNumPy.numpy2em(qVolData)

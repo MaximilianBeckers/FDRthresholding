@@ -21,7 +21,7 @@ import time
 cmdl_parser = argparse.ArgumentParser(
                prog=sys.argv[0],
                description='*** Analyse density ***',
-               formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=30), add_help=False);
+               formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=30), add_help=True);
 
 cmdl_parser.add_argument('-em', '--em_map', metavar="em_map.mrc",  type=str, required=True,
                          help='Input filename EM map');
@@ -43,14 +43,17 @@ cmdl_parser.add_argument('-mpi', action='store_true', default=False,
 						help="Set this flag if MPI should be used for the local amplitude scaling");
 cmdl_parser.add_argument('-o', '--outputFilename', metavar="output.mrc", type=str, required=False,
 						help="Name of the output");
-#cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
-#						help="noise with mean 0 and the given variance will be added to the solvent area");
+cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
+						help="noise with mean 0 and the given variance will be added to the solvent area");
 cmdl_parser.add_argument('-noiseBox', metavar="[x, y, z]", nargs='+', type=int, required=False,
 							help="Box coordinates for noise estimation");
 cmdl_parser.add_argument('-meanMap', '--meanMap', type=str, required=False,
                             help="3D map of noise means to be used for FDR control");
 cmdl_parser.add_argument('-varianceMap', '--varianceMap', type=str, required=False,
                             help="3D map of noise variances to be used for FDR control");
+cmdl_parser.add_argument('-testProc', '--testProc', type=str, required=False,
+                            help="choose between right, left and two-sided testing");
+
 
 #************************************************************
 #********************** main function ***********************
@@ -78,16 +81,19 @@ def main():
 		map.read_image(filename);
 		apix = args.apix;
 
-		#add noise if wished
-		#if args.varNoise is not None:
-		#	map = addNoiseToMapSolvent(map, args.varNoise);
-		
 		#get boxCoordinates
 		if args.noiseBox is None:
 			boxCoord = 0;
 		else:
 			boxCoord = args.noiseBox;
 		
+		#set test procdure
+		if args.testProc is not None:
+			testProc = args.testProc;
+		else:
+			testProc = 'rightSided';
+
+
 		#set output filename
 		if args.outputFilename is not None:
 			splitFilename = os.path.splitext(os.path.basename(args.outputFilename));
@@ -96,6 +102,14 @@ def main():
 
 		sizeMap = np.array([map.get_xsize(), map.get_ysize(), map.get_zsize()]);
 
+		
+		if args.varNoise is not None:
+			#add some noise
+			tmpMapData = np.copy(EMNumPy.em2numpy(map));
+			tmpMapData = np.random.randn(sizeMap[0], sizeMap[1], sizeMap[2])*np.sqrt(args.varNoise) + tmpMapData;
+			map = EMNumPy.numpy2em(tmpMapData);
+
+		
 		#handle FDR correction procedure
 		if args.FDRmethod is not None:
 			FDRmethod = args.FDRmethod;
@@ -105,28 +119,49 @@ def main():
 
 		if args.window_size is not None:
 			wn = args.window_size;
+			if wn < 10:
+				print("Provided window size is very small. Please think about potential inaccuracies of your noise estimates!");
 		else: 
-			wn = int(0.05*sizeMap[0]);
-
-		#handle masking options
-		if args.mask is None: #if no mask is given, generate a circular one
-			mask = EMData();
-			mask.set_size(sizeMap[0], sizeMap[1], sizeMap[2]);
-			mask.to_zero();	
-			sphere_radius = (np.min(sizeMap) // 2) + 10;
-			mask.process_inplace("testimage.circlesphere", {"radius":sphere_radius});
-			mask.process_inplace("filter.lowpass.gauss",{"cutoff_abs":.1});			
-			maskData = np.copy(EMNumPy.em2numpy(mask));
-		else: #else use the provided mask
+			wn = max(int(0.05*sizeMap[0]),10);
+		
+		#generate a circular Mask
+		circularMask = EMData();
+		circularMask.set_size(sizeMap[0], sizeMap[1], sizeMap[2]);
+		circularMask.to_zero();	
+		sphere_radius = (np.min(sizeMap) // 2) + 10;
+		circularMask.process_inplace("testimage.circlesphere", {"radius":sphere_radius});
+		circularMask.process_inplace("filter.lowpass.gauss",{"cutoff_abs":.1});			
+		circularMaskData = np.copy(EMNumPy.em2numpy(circularMask));
+		
+		#if mask is provided, take it
+		if args.mask is not None:	
 			mask = EMData();
 			mask.read_image(args.mask);
 			maskData = np.copy(EMNumPy.em2numpy(mask));
+		else:
+			maskData = circularMaskData;
+			
+		#*****************************
+		#temporarily generate mask****
+		maskData = np.copy(EMNumPy.em2numpy(map));
+		maskData[maskData != maskData[0,0,0]] = 1;
+		maskData[maskData == maskData[0,0,0]] = 0;
+
 
 		#estimate noise statistics
 		if args.locResMap is None: #if no local Resolution map is given,don't do any filtration
 			mapData = EMNumPy.em2numpy(map);
-			mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
 			
+			if args.mask is None:
+				mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
+			else:
+				mean, var, _ = estimateNoiseFromMapInsideMask(mapData, maskData);
+
+			#add noise if wished
+			#if args.varNoise is not None:
+			#	var = var * args.varNoise;
+
+		
 			#if varianceMap is given, use it
 			if args.varianceMap is not None:
 				varMap = EMData();
@@ -149,7 +184,7 @@ def main():
 		else: #do localFiltration and estimate statistics from this map
 			locResMap = EMData();
 			locResMap.read_image(args.locResMap);
-			mapData, mean, var = localFiltration(map, locResMap, apix, True, wn, boxCoord);		
+			mapData, mean, var = localFiltration(map, locResMap, apix, True, wn, boxCoord, args.mask, maskData);		
 
 			locFiltMapEMAN = EMNumPy.numpy2em(mapData); 
 			locFiltMapEMAN =  set_zero_origin_and_pixel_size(locFiltMapEMAN, apix);
@@ -158,7 +193,7 @@ def main():
 		makeDiagnosticPlot(map, wn, 0, False, boxCoord);
 
 		#calculate the qMap
-		qMap = calcQMap(mapData, mean, var, maskData, FDRmethod, 'rightSided');	
+		qMap = calcQMap(mapData, mean, var, circularMaskData, FDRmethod, testProc);	
 
 		#if a explicit thresholding is wished, do so
 		if args.fdr is not None:
@@ -191,9 +226,9 @@ def main():
 		confidenceMap = np.subtract(1.0, qMap);
 	
 		#apply lowpass-filtered mask to maps
-		confidenceMap = np.multiply(confidenceMap, maskData);
-	
-		#write the qMaps
+		confidenceMap = np.multiply(confidenceMap, circularMaskData);
+			
+		#write the confidence Maps
 		confidenceMapEMAN = EMNumPy.numpy2em(confidenceMap);
 		confidenceMapEMAN = set_zero_origin_and_pixel_size(confidenceMapEMAN, apix);
 		confidenceMapEMAN.write_image(splitFilename[0] + '_confidenceMap.mrc');	

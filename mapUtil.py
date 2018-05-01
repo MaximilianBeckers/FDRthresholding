@@ -15,7 +15,7 @@ from time import sleep
 
 
 #------------------------------------------------------------------------------------------------------
-def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
+def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, maskFileName, maskData):
 
 	#**************************************************
 	#**** function to perform a local filtration ******
@@ -47,7 +47,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
 	#set resolution search range, 3 decimals exact
 	locResArray = np.arange(0, 0.5 , 0.001);
 	
-	#set maximum resolutioni, important as ResMap is masking
+	#set maximum resolution, important as ResMap is masking
 	limRes = np.min(locResMapData);
 	counter = 0;
 	numRes = len(locResArray);	
@@ -91,8 +91,11 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord):
 			
 			if localVariance == True:
 				#estimate and set noise statistic
-				tmpMean, tmpVar, _ = estimateNoiseFromMap(tmpFilteredMapData, windowSize, boxCoord);
-			
+				if maskFileName is None:
+					tmpMean, tmpVar, _ = estimateNoiseFromMap(tmpFilteredMapData, windowSize, boxCoord);
+				else:
+					tmpMean, tmpVar, _ = estimateNoiseFromMapInsideMask(tmpFilteredMapData, maskData);
+
 				mean[xInd, yInd, zInd] = tmpMean;
 				var[xInd, yInd, zInd] = tmpVar;
 

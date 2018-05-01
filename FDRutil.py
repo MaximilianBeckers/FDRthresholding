@@ -50,9 +50,29 @@ def estimateNoiseFromMap(map, windowSize, boxCoord):
 	mean = np.mean(sampleMap);
 	var = np.var(sampleMap);
 	
+	return mean, var, sampleMap;
+#-------------------------------------------------------------------------------------
+def estimateNoiseFromMapInsideMask(map, mask):
+
+	#**************************************************
+	#****** function to estimate var an mean from *****
+	#******* map outside the user provided mask *******
+	#**************************************************
+
+	mask[mask<=0.0] = 0.0;
+	mask[mask>0.0] = 1000.0;
+	mask[mask<1000.0] = 1.0;
+	mask[mask==1000.0] = 0.0;
+
+	sampleMap = np.copy(map)*mask;
+	sampleMap = sampleMap[sampleMap != 0.0];
+	
+	#estimate variance and mean from the sample
+	mean = np.mean(sampleMap);
+	var = np.var(sampleMap);
+	
 	
 	return mean, var, sampleMap;
-
 #-----------------------------------------------------------------------------------
 def estimateNoiseFromMapTomo(map):
 
@@ -99,7 +119,83 @@ def estimateNoiseFromMap2D(map, windowSize):
 	#print('Estimated variance of the mean background noise: {}'.format(var))
 
 	return mean, var;
+#-------------------------------------------------------------------------------------
+def estimateECDFFromMap(map, windowSize, boxCoord):
 
+	#**************************************************
+	#****** function to estimate empirical cumul. *****
+	#**** distribution function from solvent area *****
+	#**************************************************
+
+	if boxCoord == 0:
+		#extract a sample of pure noise from the map
+		sizeMap = map.shape;
+		sizePatch = np.array([windowSize, windowSize, windowSize]);
+		center = np.array([0.5*sizeMap[0], 0.5*sizeMap[1], 0.5*sizeMap[2]]);
+		sampleMap1 = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
+		int(0.02*sizeMap[1]):(int(0.02*sizeMap[1]) + sizePatch[1]),
+		(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))];
+
+		sampleMap2 = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
+		int(0.98*sizeMap[1] - sizePatch[1]):(int(0.98*sizeMap[1])),
+		(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))];
+	
+		sampleMap3 = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
+		(int(center[1]-0.5*sizePatch[1])):(int((center[1]-0.5*sizePatch[1]) + sizePatch[1])), 
+		int(0.02*sizeMap[2]):(int(0.02*sizeMap[2]) + sizePatch[2])];
+
+		sampleMap4 = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
+		(int(center[1]-0.5*sizePatch[1])):(int((center[1]-0.5*sizePatch[1]) + sizePatch[1])), 
+		int(0.98*sizeMap[2]) - sizePatch[2]:(int(0.98*sizeMap[2]))];
+
+		#concatenate the two samples
+		sampleMap = np.concatenate((sampleMap1, sampleMap2, sampleMap3, sampleMap4), axis=0);
+
+	else:
+		sizePatch = np.array([windowSize, windowSize, windowSize]);
+		center = np.array(boxCoord);
+		sampleMap = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
+		int(center[1]-0.5*sizePatch[1]):(int(center[1]-0.5*sizePatch[1]) + sizePatch[1]),
+		(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))];	
+
+	
+
+	#estimate ECDF from map
+	sampleMap = sampleMap.flatten();	
+	numSamples = sampleMap.size;
+	sampleMapSort = np.sort(sampleMap);
+
+	ECDF = np.copy(sampleMap);	
+	for index in range(numSamples):
+		ECDF[i] = ((sampleMap[sampleMap<=sampleMapSort[i]]).size)// numSamples;
+	
+
+	return ECDF, sampleMapSort;
+
+#------------------------------------------------------------------------------------
+def getCDF(x, ECDF, sampleMapSort):
+
+	#****************************************************
+	#********* get the value of the CDF at point x ******
+	#******* CDF : Cumulative distribution function *****
+	#****************************************************
+	
+	numSamples = sampleMapSort.size;
+	minX = sampleMapSort[0];
+	maxX = sampleMapSort[numSamples-1];
+
+	spacingX = (maxX - minX)/(numSamples-1);
+
+	if x >= maxX:
+		CDFval = 1;
+	elif x <= minX:
+		CDFval = 0;
+	else:
+		#get the index in the ECDF array		
+		index = np.floor((x - minX)//spacingX);	
+		CDFval = ECDF[index];
+
+	return CDFval;
 
 #------------------------------------------------------------------------------------
 def normalizeMap(map, mean, var):
@@ -131,6 +227,7 @@ def calcQMap(map, mean, var, mask, method, test):
 
 	#calculate the test statistic
 	if np.isscalar(var):
+		map[map == 0.0] = -100000000;
 		map = np.subtract(map, mean);   
 		tMap = np.multiply(map, (1.0/(math.sqrt(var))));
 	else:
@@ -140,13 +237,16 @@ def calcQMap(map, mean, var, mask, method, test):
 		var[var==1000.0] = 0.0;
 		#upadte the mask, necessary as resmap is masking as well
 		mask = np.multiply(mask,var);
-	
-	tMap[tMap<0] = 10000000.0*np.min(tMap);
+
+	if test == 'rightSided':
+		tMap[tMap<0] = -10000000.0;
+	elif test == 'leftSided':
+		tMap[tMap>0] = 10000000.0;
 
 	#calculate the p-Values
 	print('Calculating p-Values ...');
 	pMap = np.zeros(sizeMap);
-
+	
 	vectorizedErf = np.vectorize(math.erf);
 	erfMap = vectorizedErf(tMap/math.sqrt(2.0));
 	#erf2Map = special.erf(tMap/math.sqrt(2.0));
@@ -154,10 +254,8 @@ def calcQMap(map, mean, var, mask, method, test):
 	pMapRight = 1.0 - (0.5*(1.0 + erfMap)); 
 	pMapLeft = (0.5*(1.0 + erfMap));
 
-
-
 	if test == 'twoSided':
-		pMap = np.min(pMapLeft, pMapRight);
+		pMap = np.minimum(pMapLeft, pMapRight);
 	elif test == 'rightSided':
 		pMap = pMapRight;									                        
 	elif test == 'leftSided':
