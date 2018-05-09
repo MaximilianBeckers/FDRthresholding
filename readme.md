@@ -80,8 +80,8 @@ The axes in the diagnostic image are labelled with the voxel indices.
 
 **Always have a look in the diagnostic image.** 
 
-If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
-order to get more accurate estimates of the background noise distribution.
+If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions in 
+order to get more accurate estimates of the background noise distribution. **The box size can be supplied with -w yourBoxSize.**
 
 Be aware, inclusion of either local resolution and/or atomic model information depend on the correctness of this prior information.
 Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
