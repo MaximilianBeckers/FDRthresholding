@@ -83,7 +83,7 @@ The axes in the diagnostic image are labelled with the voxel indices.
 If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions with -w in 
 order to get more accurate estimates of the background noise distribution.
 
-Be aware, inclusion of either local resolution and/or atomic model information depend on the accuracy of this prior information, if the information is inaccurate, the final confidence maps will be, too.
+Be aware, inclusion of either local resolution and/or atomic model information depend on the correctness of this prior information.
 Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
 
 **As confidence maps are almost binary and have huge contrast, they might look quite sharp and edged. For visualization the representation can be easily improved, for example in Chimera by 
