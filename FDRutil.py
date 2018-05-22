@@ -318,7 +318,6 @@ def FDR(pValues, method):
 
 	return pAdjust[pSortIndOrig];
 
-
 #---------------------------------------------------------------------------------
 def binarizeMap(map, threshold):
 

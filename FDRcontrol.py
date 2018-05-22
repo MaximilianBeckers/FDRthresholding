@@ -43,8 +43,6 @@ cmdl_parser.add_argument('-mpi', action='store_true', default=False,
 						help="Set this flag if MPI should be used for the local amplitude scaling");
 cmdl_parser.add_argument('-o', '--outputFilename', metavar="output.mrc", type=str, required=False,
 						help="Name of the output");
-cmdl_parser.add_argument('-varNoise', '--varNoise', type=float, required=False,
-						help="noise with mean 0 and the given variance will be added to the solvent area");
 cmdl_parser.add_argument('-noiseBox', metavar="[x, y, z]", nargs='+', type=int, required=False,
 							help="Box coordinates for noise estimation");
 cmdl_parser.add_argument('-meanMap', '--meanMap', type=str, required=False,
@@ -53,7 +51,8 @@ cmdl_parser.add_argument('-varianceMap', '--varianceMap', type=str, required=Fal
                             help="3D map of noise variances to be used for FDR control");
 cmdl_parser.add_argument('-testProc', '--testProc', type=str, required=False,
                             help="choose between right, left and two-sided testing");
-
+cmdl_parser.add_argument('-lowPassFilter', '--lowPassFilter', type=float, required=False,
+							help="Low-pass filter the map at the given resoultion prior to FDR control");
 
 #************************************************************
 #********************** main function ***********************
@@ -102,14 +101,10 @@ def main():
 
 		sizeMap = np.array([map.get_xsize(), map.get_ysize(), map.get_zsize()]);
 
-		
-		if args.varNoise is not None:
-			#add some noise
-			tmpMapData = np.copy(EMNumPy.em2numpy(map));
-			tmpMapData = np.random.randn(sizeMap[0], sizeMap[1], sizeMap[2])*np.sqrt(args.varNoise) + tmpMapData;
-			map = EMNumPy.numpy2em(tmpMapData);
+		if args.lowPassFilter is not None:
+			providedRes = apix/float(args.lowPassFilter);
+			map.process_inplace("filter.lowpass.tanh", {"cutoff_abs": providedRes, "fall_off": 0.1});
 
-		
 		#handle FDR correction procedure
 		if args.FDRmethod is not None:
 			FDRmethod = args.FDRmethod;
@@ -130,7 +125,7 @@ def main():
 		circularMask.to_zero();	
 		sphere_radius = (np.min(sizeMap) // 2) + 10;
 		circularMask.process_inplace("testimage.circlesphere", {"radius":sphere_radius});
-		circularMask.process_inplace("filter.lowpass.gauss",{"cutoff_abs":.1});			
+		#circularMask.process_inplace("filter.lowpass.gauss",{"cutoff_abs":.1});			
 		circularMaskData = np.copy(EMNumPy.em2numpy(circularMask));
 		
 		#if mask is provided, take it
@@ -141,12 +136,6 @@ def main():
 		else:
 			maskData = circularMaskData;
 			
-		#*****************************
-		#temporarily generate mask****
-		maskData = np.copy(EMNumPy.em2numpy(map));
-		maskData[maskData != maskData[0,0,0]] = 1;
-		maskData[maskData == maskData[0,0,0]] = 0;
-
 
 		#estimate noise statistics
 		if args.locResMap is None: #if no local Resolution map is given,don't do any filtration
@@ -156,11 +145,6 @@ def main():
 				mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
 			else:
 				mean, var, _ = estimateNoiseFromMapInsideMask(mapData, maskData);
-
-			#add noise if wished
-			#if args.varNoise is not None:
-			#	var = var * args.varNoise;
-
 		
 			#if varianceMap is given, use it
 			if args.varianceMap is not None:

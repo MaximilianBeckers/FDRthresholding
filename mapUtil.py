@@ -22,7 +22,6 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 	#****** according to the local resolution *********
 	#**************************************************
 
-
 	#some initialization
 	numX, numY, numZ = map.get_xsize(), map.get_ysize(), map.get_zsize();
 	mean = np.zeros((numX, numY, numZ));
