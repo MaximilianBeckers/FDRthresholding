@@ -46,7 +46,7 @@ For example:
 /programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -noiseBox 50 50 120
 ```
 
-** Boxes for noise estimation should be made as big possible in order to get precise and reliable background noise estimates. **
+**Boxes for noise estimation should be made as big possible in order to get precise and reliable background noise estimates.**
 
 ### Incorporation of local resolution information
 
