@@ -29,7 +29,7 @@ If you want to use the LocScale feature, you should have a running LocScale vers
 
 Installation time is dependent on the installation time you need for LocScale and EMAN2. The presented algorithms are basically just scripts that have to be copied to the computer and do not require any further installation. 
 
-#### Using Git
+##### Installation using Git
 Alternatively, you can just clone the repository to your local machine with:
 
 ```
