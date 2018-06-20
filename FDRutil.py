@@ -148,28 +148,39 @@ def estimateECDFFromMap(map, windowSize, boxCoord):
 		(int(center[1]-0.5*sizePatch[1])):(int((center[1]-0.5*sizePatch[1]) + sizePatch[1])), 
 		int(0.98*sizeMap[2]) - sizePatch[2]:(int(0.98*sizeMap[2]))];
 
-		#concatenate the two samples
+		#conatenate the two samples
 		sampleMap = np.concatenate((sampleMap1, sampleMap2, sampleMap3, sampleMap4), axis=0);
-
+	
+	elif boxCoord == -1:
+		sampleMap = map;
+	
 	else:
 		sizePatch = np.array([windowSize, windowSize, windowSize]);
 		center = np.array(boxCoord);
 		sampleMap = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
 		int(center[1]-0.5*sizePatch[1]):(int(center[1]-0.5*sizePatch[1]) + sizePatch[1]),
 		(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))];	
-
 	
-
 	#estimate ECDF from map
 	sampleMap = sampleMap.flatten();	
+	
+	#downsize the sample
+	finalSampleSize = min(100000, sampleMap.size);
+	sampleMap = np.random.choice(sampleMap, finalSampleSize);
 	numSamples = sampleMap.size;
 	sampleMapSort = np.sort(sampleMap);
 
-	ECDF = np.copy(sampleMap);	
-	for index in range(numSamples):
-		ECDF[i] = ((sampleMap[sampleMap<=sampleMapSort[i]]).size)// numSamples;
-	
+	minX = sampleMapSort[0];
+	maxX = sampleMapSort[numSamples-1];
+	numInterval = numSamples;
+	spacingX = (maxX - minX)/(float(numInterval));
 
+	ECDF = np.zeros(numInterval);	
+	for index in range(numInterval):
+		#val = minX + spacingX*index;
+		val = sampleMapSort[index];
+		ECDF[index] = ((sampleMapSort[sampleMapSort<= val]).size)/float(numSamples);
+	
 	return ECDF, sampleMapSort;
 
 #------------------------------------------------------------------------------------
@@ -183,16 +194,17 @@ def getCDF(x, ECDF, sampleMapSort):
 	numSamples = sampleMapSort.size;
 	minX = sampleMapSort[0];
 	maxX = sampleMapSort[numSamples-1];
+	numInterval = 10000;
 
-	spacingX = (maxX - minX)/(numSamples-1);
+	spacingX = (maxX - minX)/(float(numInterval));
 
 	if x >= maxX:
-		CDFval = 1;
+		CDFval = 1.0;
 	elif x <= minX:
-		CDFval = 0;
+		CDFval = 0.0;
 	else:
 		#get the index in the ECDF array		
-		index = np.floor((x - minX)//spacingX);	
+		index = int(math.floor((x - minX)/float(spacingX)));	
 		CDFval = ECDF[index];
 
 	return CDFval;
@@ -216,7 +228,7 @@ def normalizeMap(map, mean, var):
 
 
 #-----------------------------------------------------------------------------------
-def calcQMap(map, mean, var, mask, method, test):
+def calcQMap(map, mean, var, ECDF, windowSize, boxCoord, mask, method, test):
 
 	#*****************************************
 	#***** generate qMap of a 3D density *****
@@ -230,6 +242,7 @@ def calcQMap(map, mean, var, mask, method, test):
 		map[map == 0.0] = -100000000;
 		map = np.subtract(map, mean);   
 		tMap = np.multiply(map, (1.0/(math.sqrt(var))));
+		map = np.copy(tMap);
 	else:
 		var[var==0.0] = 1000.0; #just to avoid division by zero
 		map = np.subtract(map, mean); 	
@@ -247,19 +260,55 @@ def calcQMap(map, mean, var, mask, method, test):
 	print('Calculating p-Values ...');
 	pMap = np.zeros(sizeMap);
 	
-	vectorizedErf = np.vectorize(math.erf);
-	erfMap = vectorizedErf(tMap/math.sqrt(2.0));
-	#erf2Map = special.erf(tMap/math.sqrt(2.0));
+	if np.isscalar(ECDF): 
+		if ECDF == 0: 
+			vectorizedErf = np.vectorize(math.erf);
+			erfMap = vectorizedErf(tMap/math.sqrt(2.0));
+			#erf2Map = special.erf(tMap/math.sqrt(2.0));
 
-	pMapRight = 1.0 - (0.5*(1.0 + erfMap)); 
-	pMapLeft = (0.5*(1.0 + erfMap));
+			pMapRight = 1.0 - (0.5*(1.0 + erfMap)); 
+			pMapLeft = (0.5*(1.0 + erfMap));
+	
+		else:
+			#if ecdf shall be used, use if to p-vals
+			ECDF, sampleSort = estimateECDFFromMap(map, windowSize, boxCoord);
+			print('start ECDF calculation ...');	
+			vecECDF = np.interp(map, sampleSort, ECDF, left=0.0, right=1.0);
+			pMapRight = 1.0 - vecECDF;
+			pMapLeft = vecECDF;
+
+			#do test plots
+			X = np.linspace(-5, 5, 10000);
+			vectorizedErf = np.vectorize(math.erf);
+			Y1 = np.interp(X, sampleSort, ECDF, left=0.0, right=1.0);
+			Y2 = (0.5*(1.0 + vectorizedErf(X/math.sqrt(2.0))));
+			import matplotlib.pyplot as plt
+			plt.plot(X,Y1);
+			plt.plot(X,Y2);
+			plt.savefig('ECDF_vs_CDF.png', dpi=600);
+			plt.close();
+	    	#do test plots
+			X = np.linspace(2, 5, 10000);
+			Y1 = np.interp(X, sampleSort, ECDF, left=0.0, right=1.0);
+			Y2 = (0.5*(1.0 + vectorizedErf(X/math.sqrt(2.0))));
+			import matplotlib.pyplot as plt 
+			plt.plot(X,Y1);
+			plt.plot(X,Y2);
+			plt.savefig('ECDF_vs_CDF_tail.png', dpi=600);
+			plt.close();
+	else:
+		pMapRight = 1 - ECDF;
+		pMapLeft = ECDF;
+
 
 	if test == 'twoSided':
 		pMap = np.minimum(pMapLeft, pMapRight);
 	elif test == 'rightSided':
-		pMap = pMapRight;									                        
+		pMap = pMapRight;
+		pMap[tMap==-10000000.0] = 1.0
 	elif test == 'leftSided':
 		pMap = pMapLeft;
+		pMap[tMap==10000000.0] = 1.0;
 	
 	#take the p-values in the mask	
 	binaryMask = np.copy(mask);
@@ -280,7 +329,6 @@ def calcQMap(map, mean, var, mask, method, test):
 	qMap[qMap == np.nan] = 1.0;
 
 	return qMap;
-
 
 #---------------------------------------------------------------------------------
 def FDR(pValues, method):

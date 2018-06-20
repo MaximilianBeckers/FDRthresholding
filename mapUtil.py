@@ -15,7 +15,7 @@ from time import sleep
 
 
 #------------------------------------------------------------------------------------------------------
-def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, maskFileName, maskData):
+def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, maskFileName, maskData, ECDF):
 
 	#**************************************************
 	#**** function to perform a local filtration ******
@@ -26,6 +26,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 	numX, numY, numZ = map.get_xsize(), map.get_ysize(), map.get_zsize();
 	mean = np.zeros((numX, numY, numZ));
 	var = np.zeros((numX, numY, numZ));
+	ECDFmap = np.ones((numX, numY, numZ));
 	filteredMapData = np.zeros((numX, numY, numZ));
 
 	#transform to numpy array
@@ -61,6 +62,8 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 	#printProgressBar(counter, numRes, prefix = 'Progress:', suffix = 'Complete', bar_length = 50)
 	
 	for tmpRes in locResArray:   
+		print(tmpRes);
+		
 		#get indices of voxels with the current resolution	
 		indices = np.where(locResMapData == tmpRes);
 	
@@ -90,6 +93,15 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 			
 			if localVariance == True:
 				#estimate and set noise statistic
+
+				if ECDF == 1:
+					#if ecdf shall be used, use if to p-vals
+					tmpECDF, sampleSort = estimateECDFFromMap(tmpFilteredMapData, windowSize, boxCoord);
+					vecECDF = np.interp(tmpFilteredMapData[xInd, yInd, zInd], sampleSort, tmpECDF, left=0.0, right=1.0);
+					ECDFmap[xInd, yInd, zInd] = vecECDF; 
+				else:
+					ECDFmap = 0;
+
 				if maskFileName is None:
 					tmpMean, tmpVar, _ = estimateNoiseFromMap(tmpFilteredMapData, windowSize, boxCoord);
 				else:
@@ -98,7 +110,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 				mean[xInd, yInd, zInd] = tmpMean;
 				var[xInd, yInd, zInd] = tmpVar;
 
-	return filteredMapData, mean, var;
+	return filteredMapData, mean, var, ECDFmap;
 
 #---------------------------------------------------------------------------------------------------
 def padFourier(map, apix, finalPix):
@@ -152,7 +164,8 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 	sizePatch = np.array([windowSize, windowSize, windowSize]);
 	center = np.array([0.5*sizeMap[0], 0.5*sizeMap[1], 0.5*sizeMap[2]]);
 	visMap = np.copy(mapData);
-	noiseLabel = (np.mean(visMap) + 5*np.var(visMap));
+	noiseLabel = (np.mean(visMap)) + 5*np.var(visMap);
+	noiseLabel = np.max(visMap.flatten())
 	
 	#if coordinates are provided, do singleBox estimation
 	if boxCoord != 0:
@@ -224,7 +237,7 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 
 	pp.savefig();
 	pp.close();
-
+	plt.close();
 
 #------------------------------------------------------------------------------------------------
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, bar_length = 100):

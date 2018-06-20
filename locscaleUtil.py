@@ -106,11 +106,12 @@ def get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn):
     
     return xyz_locs, cropp_n_mask_ind, mask.shape
 
-def get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord):
+def get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord, ecdfBool):
     sharpened_vals = np.array([], dtype=np.float32)
     sharpened_mean_vals = np.array([], dtype=np.float32)
     sharpened_var_vals = np.array([], dtype=np.float32)
-    
+    sharpened_ecdf_vals = np.array([], dtype=np.float32)
+
     reg = Region(wn, wn, wn, wn, wn, wn)
 
     central_pix = int(round(wn / 2.0))
@@ -153,34 +154,49 @@ def get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, 
         noiseMapFFT = noiseMap.do_fft()
         noiseMapFFT.apply_radial_func(0.0, (1.0 / (apix * noiseMap.get_xsize())), sharpFactors.tolist())
         mapNoise_sharpened = noiseMapFFT.do_ift()
-        
-        	
+                	
         if locFilt == True:
             tmpRes = round(apix/locResMap[k, j, i],3)
             				
             mapNoise_sharpened = mapNoise_sharpened.process("filter.lowpass.tanh", {"cutoff_abs": tmpRes, "fall_off": 0.1})
             map_b_sharpened = map_b_sharpened.process("filter.lowpass.tanh", {"cutoff_abs": tmpRes, "fall_off": 0.1})     
-			 
+            
             #calculate noise statistics	  
             map_noise_sharpened_data = np.copy(EMNumPy.em2numpy(mapNoise_sharpened))	   
+          	
+            if ecdfBool:
+                tmpECDF, sampleSort = estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
+                ecdf = np.interp(map_b_sharpened[central_pix, central_pix, central_pix], sampleSort, tmpECDF, left=0.0, right=1.0); 
+            else:
+                ecdf = 0;
+
             mean = np.mean(map_noise_sharpened_data)
             var = np.var(map_noise_sharpened_data)
             if tmpRes == round(apix/100.0, 3):  
                 mean = 0.0
                 var = 0.0
+                ecdf = 0;   	 			
         else:
+            
             #calculate noise statistics
             map_noise_sharpened_data = np.copy(EMNumPy.em2numpy(mapNoise_sharpened))
+         
+            if ecdfBool:
+                tmpECDF, sampleSort = estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
+                ecdf = np.interp(map_b_sharpened[central_pix, central_pix, central_pix], sampleSort, tmpECDF, left=0.0, right=1.0); 
+            else:
+                ecdf = 0;
+            			
             mean = np.mean(map_noise_sharpened_data)
             var = np.var(map_noise_sharpened_data)
-
 
         #append values to the sharpened values
         sharpened_vals = np.append(sharpened_vals, map_b_sharpened[central_pix, central_pix, central_pix])
         sharpened_mean_vals = np.append(sharpened_mean_vals, mean)
         sharpened_var_vals = np.append(sharpened_var_vals, var)     
-        
-    return sharpened_vals, sharpened_mean_vals, sharpened_var_vals
+        sharpened_ecdf_vals = np.append(sharpened_ecdf_vals, ecdf);
+
+    return sharpened_vals, sharpened_mean_vals, sharpened_var_vals, sharpened_ecdf_vals;
 
 def put_scaled_voxels_back_in_original_volume_including_padding(sharpened_vals, masked_indices, map_shape):
     map_scaled = np.zeros(np.prod(map_shape))
@@ -191,7 +207,7 @@ def put_scaled_voxels_back_in_original_volume_including_padding(sharpened_vals, 
     
     return map_scaled
 
-def run_window_function_including_scaling(emmap, modmap, mask, wn, apix, locFilt, locResMap, boxCoord):
+def run_window_function_including_scaling(emmap, modmap, mask, wn, apix, locFilt, locResMap, boxCoord, ecdfBool):
     """
     >>> emmap, modmap, mask = setup_test_data()
     >>> scaled_vol = run_window_function_including_scaling(emmap,modmap,mask,wn=10,apix=1.0)
@@ -205,13 +221,15 @@ def run_window_function_including_scaling(emmap, modmap, mask, wn, apix, locFilt
     """
     masked_xyz_locs, masked_indices, map_shape = get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn)
  
-    sharpened_vals, sharpened_mean_vals, sharpened_var_vals = get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord)
+    sharpened_vals, sharpened_mean_vals, sharpened_var_vals, sharpened_ecdf_vals = get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord, ecdfBool)
      
     map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_vals, masked_indices, map_shape)
-    mean_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_vals, masked_indices, map_shape)	 
-    var_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_vals, masked_indices, map_shape)
+    mean_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_mean_vals, masked_indices, map_shape)	 
+    var_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_var_vals, masked_indices, map_shape)
+    ecdf_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(sharpened_ecdf_vals, masked_indices, map_shape);
 
-    return map_scaled, mean_map_scaled, var_map_scaled 
+
+    return map_scaled, mean_map_scaled, var_map_scaled, ecdf_map_scaled 
    
 def split_sequence_evenly(seq, size):
     """
@@ -313,6 +331,7 @@ def prepare_mask_and_maps_for_scaling(args):
     if args.locResMap is not None:
         locResMapData = np.copy(EMNumPy.em2numpy(locResMap))  
         locResMapData[locResMapData == 0.0] = 100.0;
+        locResMapData[locResMapData >= 100.0] = 100.0;
         locFilt = True    
     else:
         locFilt = False 
@@ -320,7 +339,7 @@ def prepare_mask_and_maps_for_scaling(args):
 
     return emmap, modmap, mask, wn, window_bleed_and_pad, FDRmethod, locFilt, locResMapData, boxCoord
 
-def run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, apix, locFilt, locResMap, boxCoord):
+def run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, apix, locFilt, locResMap, boxCoord, ecdfBool):
     """
     >>> emmap_name, modmap_name, mask_name = setup_test_data_to_files()
     >>> import subprocess
@@ -367,17 +386,19 @@ def run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, apix, loc
  
     masked_xyz_locs = np.column_stack((zs, ys, xs))
  
-    sharpened_vals, sharpened_mean_vals, sharpened_var_vals = get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord)
+    sharpened_vals, sharpened_mean_vals, sharpened_var_vals, sharpened_ecdf_vals = get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, apix, locFilt, locResMap, boxCoord, ecdfBool)
 
     comm.barrier()	
     sharpened_vals = comm.gather(sharpened_vals, root=0)
     sharpened_mean_vals = comm.gather(sharpened_mean_vals, root=0)
     sharpened_var_vals = comm.gather(sharpened_var_vals, root=0)		
- 
+    sharpened_ecdf_vals = comm.gather(sharpened_ecdf_vals, root=0);
+
     if rank == 0:
         sharpened_vals = merge_sequence_of_sequences(sharpened_vals)
         sharpened_mean_vals = merge_sequence_of_sequences(sharpened_mean_vals)
         sharpened_var_vals = merge_sequence_of_sequences(sharpened_var_vals)
+        sharpened_ecdf_vals = merge_sequence_of_sequences(sharpened_ecdf_vals)
 
         map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(np.array(sharpened_vals),
         masked_indices, map_shape)
@@ -387,12 +408,16 @@ def run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, apix, loc
 
         var_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(np.array(sharpened_var_vals),
         masked_indices, map_shape)
+        
+        ecdf_map_scaled = put_scaled_voxels_back_in_original_volume_including_padding(np.array(sharpened_ecdf_vals),
+        masked_indices, map_shape)
+
     else:
         map_scaled = None
         mean_map_scaled = None
         var_map_scaled = None		
- 
-    return map_scaled, mean_map_scaled, var_map_scaled, rank
+        ecdf_map_scaled = None
+    return map_scaled, mean_map_scaled, var_map_scaled, ecdf_map_scaled, rank
   
 def write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, LocScaleVol, filename):
     LocScaleVol = set_zero_origin_and_pixel_size(LocScaleVol, args.apix)
@@ -423,17 +448,21 @@ def launch_amplitude_scaling(args):
         testProc = 'rightSided'
 
     if not args.mpi:
-        LocScaleVol, meanVol, varVol = run_window_function_including_scaling(emmap, modmap, mask, wn, args.apix, locFilt, locResMap, boxCoord)
+        LocScaleVol, meanVol, varVol, ecdfVol = run_window_function_including_scaling(emmap, modmap, mask, wn, args.apix, locFilt, locResMap, boxCoord, args.ecdf)
         print("Local amplitude scaling finished.")
 
         #calculate qMap
         print("Start significance analysis.")
         meanVolData = EMNumPy.em2numpy(meanVol)
         varVolData = EMNumPy.em2numpy(varVol)
+        ecdfVolData = EMNumPy.em2numpy(ecdfVol)
         LocScaleVolData = EMNumPy.em2numpy(LocScaleVol)
         maskData = EMNumPy.em2numpy(mask)
 
-        qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, testProc)
+        if not args.ecdf:
+            ecdfVolData = 0;
+
+        qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, ecdfVolData, 0, 0, maskData, FDRmethod, testProc)
         qVolData = np.subtract(np.ones(qVolData.shape), qVolData)
         qVol = EMNumPy.numpy2em(qVolData)
 
@@ -453,7 +482,7 @@ def launch_amplitude_scaling(args):
     elif args.mpi:
 
 
-        LocScaleVol, meanVol, varVol, rank = run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, args.apix, locFilt, locResMap, boxCoord)
+        LocScaleVol, meanVol, varVol, ecdfVol, rank = run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, args.apix, locFilt, locResMap, boxCoord, args.ecdf)
 	
         if rank == 0:
             print("Local amplitude scaling finished.")			
@@ -462,10 +491,14 @@ def launch_amplitude_scaling(args):
             print("Start significance analysis.")
             meanVolData = EMNumPy.em2numpy(meanVol)
             varVolData = EMNumPy.em2numpy(varVol)
+            ecdfVolData = EMNumPy.em2numpy(ecdfVol)
             LocScaleVolData = EMNumPy.em2numpy(LocScaleVol)
             maskData = EMNumPy.em2numpy(mask)
 
-            qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, maskData, FDRmethod, testProc)
+            if not args.ecdf:
+                ecdfVolData = 0;
+
+            qVolData = calcQMap(LocScaleVolData, meanVolData, varVolData, ecdfVolData, 0, 0, maskData, FDRmethod, testProc)
             #invert qMap for visualization tools
             qVolData = np.subtract(np.ones(qVolData.shape), qVolData)
             qVol = EMNumPy.numpy2em(qVolData)

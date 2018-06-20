@@ -53,6 +53,8 @@ cmdl_parser.add_argument('-testProc', '--testProc', type=str, required=False,
                             help="choose between right, left and two-sided testing");
 cmdl_parser.add_argument('-lowPassFilter', '--lowPassFilter', type=float, required=False,
 							help="Low-pass filter the map at the given resoultion prior to FDR control");
+cmdl_parser.add_argument('-ecdf', action='store_true', default=False,
+                        help="Set this flag if the empricical cumulative distribution function should be used instead of the standard normal distribution");
 
 #************************************************************
 #********************** main function ***********************
@@ -92,6 +94,12 @@ def main():
 		else:
 			testProc = 'rightSided';
 
+		#set ECDF
+		if args.ecdf:
+			ECDF = 1;
+		else:
+			ECDF = 0;
+			
 
 		#set output filename
 		if args.outputFilename is not None:
@@ -114,11 +122,12 @@ def main():
 
 		if args.window_size is not None:
 			wn = args.window_size;
+			wn = int(wn);
 			if wn < 10:
 				print("Provided window size is very small. Please think about potential inaccuracies of your noise estimates!");
 		else: 
 			wn = max(int(0.05*sizeMap[0]),10);
-		
+
 		#generate a circular Mask
 		circularMask = EMData();
 		circularMask.set_size(sizeMap[0], sizeMap[1], sizeMap[2]);
@@ -162,13 +171,13 @@ def main():
 				output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var); 
 			else:
 				output = "Using user provided noise statistics"; 
-	
+
 			print(output);
 
 		else: #do localFiltration and estimate statistics from this map
 			locResMap = EMData();
 			locResMap.read_image(args.locResMap);
-			mapData, mean, var = localFiltration(map, locResMap, apix, True, wn, boxCoord, args.mask, maskData);		
+			mapData, mean, var, ECDF = localFiltration(map, locResMap, apix, True, wn, boxCoord, args.mask, maskData, ECDF);		
 
 			locFiltMapEMAN = EMNumPy.numpy2em(mapData); 
 			locFiltMapEMAN =  set_zero_origin_and_pixel_size(locFiltMapEMAN, apix);
@@ -177,7 +186,7 @@ def main():
 		makeDiagnosticPlot(map, wn, 0, False, boxCoord);
 
 		#calculate the qMap
-		qMap = calcQMap(mapData, mean, var, circularMaskData, FDRmethod, testProc);	
+		qMap = calcQMap(mapData, mean, var, ECDF, wn, boxCoord, circularMaskData, FDRmethod, testProc);	
 
 		#if a explicit thresholding is wished, do so
 		if args.fdr is not None:
