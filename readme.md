@@ -133,7 +133,7 @@ gunzip TRPV1_sharpened_-100_3.4A.map.gz
 We are ready to generate the confidence map by
 
 ```
-python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
+python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156 -w 50
 ```
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
