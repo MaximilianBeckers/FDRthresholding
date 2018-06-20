@@ -34,7 +34,7 @@ Installation time is dependent on the installation time you need for LocScale an
 **Input:**
 
 Confidence maps can in general be generated from any unmasked EM map, as long as background noise can be estimated. It will work on sharpened/unsharpened and/or filtered/unfiltered maps. The most informative case might be on 
-sharpened and filtered maps. 
+sharpened and filtered maps. Locally filtered maps can not be used as input, as local noise levels have to be taken into account. How to incorporate local resolution information and local filtering is explained in the next section.
 
 **Output:**
 
