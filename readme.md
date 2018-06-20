@@ -29,6 +29,18 @@ If you want to use the LocScale feature, you should have a running LocScale vers
 
 Installation time is dependent on the installation time you need for LocScale and EMAN2. The presented algorithms are basically just scripts that have to be copied to the computer and do not require any further installation. Alternatively, you can just clone the repository to your local machine.
 
+## Input and Output
+
+**Input:**
+
+Confidence maps can in general be generated from any unmasked EM map, as long as background noise can be estimated. It will work on sharpened/unsharpened and/or filtered/unfiltered maps. The most informative case might be on 
+sharpened and filtered maps. 
+
+**Output:**
+
+The confidence map will have the name your_input_map_confidenceMap.mrc. It contains values between 0 and 1 and can be visualized in any dedicated visualization software (e.g. Chimera, Coot, ...). Thresholding the map at 0.99 means a false discovery rate of 1%, i.e. that less than 1% of all
+pixels seen at this threshold are expected to be background noise.
+
 ## How to use
 
 The simplest, and probably most important case, is the generation of a confidence map from a simple cryoEM density without incorporation of local resolution or atomic model information.
