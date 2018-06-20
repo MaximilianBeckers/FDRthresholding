@@ -27,7 +27,15 @@ python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
 
-Installation time is dependent on the installation time you need for LocScale and EMAN2. The presented algorithms are basically just scripts that have to be copied to the computer and do not require any further installation. Alternatively, you can just clone the repository to your local machine.
+Installation time is dependent on the installation time you need for LocScale and EMAN2. The presented algorithms are basically just scripts that have to be copied to the computer and do not require any further installation. 
+
+#### Using Git
+Alternatively, you can just clone the repository to your local machine with:
+
+```
+git clone https://git.embl.de/mbeckers/FDRthresholding.git
+```
+
 
 ## Input and Output
 
