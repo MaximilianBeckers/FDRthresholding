@@ -22,7 +22,7 @@ Once you have a working EMAN2 installation ( http://blake.bcm.edu/emanwiki/EMAN2
 
 For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMAN2 python installation: 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
+python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
@@ -34,7 +34,7 @@ Installation time is dependent on the installation time you need for LocScale an
 The simplest, and probably most important case, is the generation of a confidence map from a simple cryoEM density without incorporation of local resolution or atomic model information.
 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
+python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
 The output will be the corresponding confidence map ( yourMap_confidenceMap.mrc ) and a diagnostic image (diag_image.pdf), that shows three slices through the map together with the regions used for noise estimation. In order to get good estimates of the background noise distribution, you should make sure that the region contains just noise and no signal of the particle.
@@ -43,7 +43,7 @@ Size of the noise estimation region can be adjusted with -w sizeOfRegion. If the
 For example:
 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -noiseBox 50 50 120
+python FDRcontrol.py -em yourMap.mrc -p 5.6 -w 20 -noiseBox 50 50 120
 ```
 
 Boxes for noise estimation should be made as big possible in order to get precise and reliable background noise estimates.
@@ -57,7 +57,7 @@ The ouput will be a locally filtered map together with the diagnostic image and 
 
 Example usage:
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap.mrc
+python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap.mrc
 ```
 
 ### Incorporation of local amplitude scaling
@@ -69,7 +69,7 @@ The ouput will be the locally scaled map together with the diagnostic image and 
 Example usage:
 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
+python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
 ```
 
 ## Instructions for use and important tips
@@ -92,7 +92,7 @@ order to get more accurate estimates of the background noise distribution. **The
 
 **1. Run the FDR control on your map**
 
-**2. Have a look in diag_image.pdf and check the noise estimation. Make sure the marked regions do not fall into your molecule.**
+**2. Have a look in diag_image.pdf and check the noise estimation. Make sure the marked regions do not fall into your molecule and identify maximum size possible for correct background noise estimaion and/or identify new box coordinates.**
 
 **3. Rerun the FDR control with the optimised noise estimation regions. Make the regions as big as possible. Size can be set with -w and the box, if it has to be adjusted, with -noiseBox xCoord yCoord zCoord**
 
@@ -121,7 +121,7 @@ gunzip TRPV1_sharpened_-100_3.4A.map.gz
 We are ready to generate the confidence map by
 
 ```
-/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
+python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
 ```
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
