@@ -93,9 +93,9 @@ the data generating process makes choice of the regions straightforward, sub-tom
 The region can be identified by means of the slice-views in the diagnostic image of a first run with default parameters, and then adjust center and width of the noise region for a subsequent run. 
 The axes in the diagnostic image are labelled with the voxel indices.
 
-**Always have a look in the diagnostic image. After a first run you can use the information from the diagnostic image to increase the box size for noise estimation.** 
+**Always have a look in the diagnostic image. After a first run you should use the information from the diagnostic image to increase the box size for noise estimation.** 
 
-If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions in 
+If your map contains large background areas, i.e. small particle compared to the box size, you should increase the sizes of the noise estimation regions in 
 order to get more accurate estimates of the background noise distribution. **The box size can be supplied with -w yourBoxSize.**
 
 **********************************
