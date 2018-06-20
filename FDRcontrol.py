@@ -132,7 +132,7 @@ def main():
 		circularMask = EMData();
 		circularMask.set_size(sizeMap[0], sizeMap[1], sizeMap[2]);
 		circularMask.to_zero();	
-		sphere_radius = (np.min(sizeMap) // 2) + 10;
+		sphere_radius = (np.min(sizeMap) // 2) + 5;
 		circularMask.process_inplace("testimage.circlesphere", {"radius":sphere_radius});
 		#circularMask.process_inplace("filter.lowpass.gauss",{"cutoff_abs":.1});			
 		circularMaskData = np.copy(EMNumPy.em2numpy(circularMask));
