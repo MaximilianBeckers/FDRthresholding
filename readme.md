@@ -86,6 +86,13 @@ The axes in the diagnostic image are labelled with the voxel indices.
 If your map contains large background areas, i.e. small particle compared to the box size, you can try to increase the sizes of the noise estimation regions in 
 order to get more accurate estimates of the background noise distribution. **The box size can be supplied with -w yourBoxSize.**
 
+**Recommended workflow:**
+
+**1. Run the FDR control on your map**
+**2. Have a look in diag_image.pdf and check the noise estimation. Make sure the marked regions do not fall into your molecule.**
+**3. Rerun the FDR control with the optimised noise estimation regions. Make the regions as big as possible. Size can be set with -w and the box, if it has to be adjusted, with -noiseBox xCoord yCoord zCoord**
+
+
 Be aware, inclusion of either local resolution and/or atomic model information depend on the correctness of this prior information.
 Make sure orientations of model maps and/or local resolution maps with respect to the input EM-map are correct.
 
