@@ -20,7 +20,6 @@ The software consists of four scripts, FDRcontrol.py, mapUtil.py, FDRutil.py and
 
 Once you have a working EMAN2 installation ( http://blake.bcm.edu/emanwiki/EMAN2 ), the software can be simply run by using your Python version that comes with EMAN2:   
 
-For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMAN2 python installation: 
 ```
 python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
