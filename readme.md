@@ -123,7 +123,7 @@ Make sure orientations of model maps and/or local resolution maps with respect t
 **As confidence maps are almost binary and have huge contrast, they might look quite sharp and edged. For visualization the representation can be easily improved, for example in Chimera by 
 turning on surface smoothing in the Volume Viewer in Features --> Sufrace and Mesh options.**
 
-## Demonstration with TRPV1 EMD5778
+## Tutorial with TRPV1 EMD5778
 
 We will demonstrate the procedure using the 3.4 Angstrom structure of TRPV1 (EMD5778, Liao et al. 2013)
 
@@ -140,7 +140,14 @@ gunzip TRPV1_sharpened_-100_3.4A.map.gz
 We are ready to generate the confidence map by
 
 ```
+python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156 
+```
+If we have a look in diag_image.pdf, we see that we can increase the box sizes for background noise estimation. Let's choose 50 and generate a new confidence map with 
+
+```
 python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156 -w 50
 ```
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
+
+##Frequently asked questions
