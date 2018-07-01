@@ -150,4 +150,8 @@ python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156 -w 50
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
 
-##Frequently asked questions
+## Frequently asked questions
+
+### 1. My confidence map doesn't show expected high resolution details
+
+Confidence maps are not invariant to B-factor sharpening and filtering
