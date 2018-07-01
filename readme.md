@@ -155,4 +155,7 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
 ### 1. My confidence map doesn't show expected high resolution details
 
 Confidence maps are not invariant to B-factor sharpening and filtering. Oversharpening will lead to increased background noise levels; confidence maps take care of
-that and oversharpened regions will be simply calssified as noise. Undersharpened regions will be visible in confidence 
+that and oversharpened regions will be simply calssified as noise. Undersharpening will be visible in confidence maps though the absence of high resolution details.
+So you can simply try to increase the sharpening and generate upadted confidence maps, which will help avoiding typical oversharpening issues (e.g. interpretation of noise as signal).
+
+### 2. My confidence map shows significant, unspecific, noise-like signal?
