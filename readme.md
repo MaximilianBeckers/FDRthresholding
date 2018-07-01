@@ -158,4 +158,22 @@ Confidence maps are not invariant to B-factor sharpening and filtering. Overshar
 that and oversharpened regions will be simply calssified as noise. Undersharpening will be visible in confidence maps though the absence of high resolution details.
 So you can simply try to increase the sharpening and generate upadted confidence maps, which will help avoiding typical oversharpening issues (e.g. interpretation of noise as signal).
 
-### 2. My confidence map shows significant, unspecific, noise-like signal?
+### 2. My confidence map shows unspecific, noise-like signal at low FDR
+
+First of all make sure, your background noise estimation did work properly by checking diag_image.pdf. If your noise estimation region is to small or when you
+estimate noise from masked regions, your background noise estimates might be inaccurate.
+
+However, highly flexible or completely disordered regions can appear noise-like in confidence maps; especially when using masked refinement this
+effect might occur. These densities are indeed significant and truly there, however, care has to be taken not to interpret them as ions or water. 
+Incorporation of local resolution information with -locResMap yourLocalResolutionMap.mrc might help in this case.
+
+### 3. Parts of the molecule seem to be missing in the confidence map
+
+If  parts of your molecule (loops, ligands, etc.) are missing in the confidence map at low FDR, these might be due to oversharpening. An easy solution that
+almost always helps in this situation is incorporation of local resolution information with -locResMap yourLocalResolutionMap.mrc.
+
+### 4. Incorporation of local resolution information seem to introduce artifacts in the confidence map. 
+
+If the local resolution map contains low resolution artifacts (e.g. when estimated from masked half maps), these might introduce smeared out densities. In this
+case it can help to cut the lowest resolutions in your local resolution map to some reasonable value like 10 Angstroms.
+
