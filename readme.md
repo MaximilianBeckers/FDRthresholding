@@ -175,5 +175,5 @@ almost always helps in this situation is incorporation of local resolution infor
 ### 4. Incorporation of local resolution information seem to introduce artifacts in the confidence map. 
 
 If the local resolution map contains low resolution artifacts (e.g. when estimated from masked half maps), these might introduce smeared out densities. In this
-case it can help to cut the lowest resolutions in your local resolution map to some reasonable value like 10 Angstroms.
+case it can help to cut the lowest resolutions in your local resolution map to the lowest expected value (e.g. 10 Angstroms).
 
