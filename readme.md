@@ -11,15 +11,18 @@ Additional post-processing like local filtering or local amplitude scaling (LocS
 
 The software is written in Python and itself dependent on EMAN2 and NumPy libraries. 
 
+For incorporation of the local amplitude scaling (LocScale) procedue, mpi4py is needed in order to use parallelisation, as described here:  https://git.embl.de/jakobi/LocScale/wikis/home
 
 
 ### Installing
 
 The software consists of four scripts, FDRcontrol.py, mapUtil.py, FDRutil.py and locscaleUtil.py, that just have to be copied to your computer.
 
+Once you have a working EMAN2 installation ( http://blake.bcm.edu/emanwiki/EMAN2 ), the software can be simply run by using your Python version that comes with EMAN2:   
 
+For example if /programs/x86_64-linux/eman2/2.2/bin/python is the respective EMAN2 python installation: 
 ```
-python FDRcontrol.py -em yourMap.mrc -p thePixelSize
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize
 ```
 
 If you want to use the LocScale feature, you should have a running LocScale version, together with MPI,  as described here:  https://git.embl.de/jakobi/LocScale/wikis/home.  
@@ -51,7 +54,7 @@ The ouput will be a locally filtered map together with the diagnostic image and 
 
 Example usage:
 ```
-python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap.mrc
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -locResMap yourLocalResolutionMap.mrc
 ```
 
 ### Incorporation of local amplitude scaling
@@ -63,7 +66,7 @@ The ouput will be the locally scaled map together with the diagnostic image and 
 Example usage:
 
 ```
-python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em yourMap.mrc -p thePixelSize -mm yourModelMap.mrc -w 20
 ```
 
 ## Instructions for use and important tips
@@ -103,7 +106,7 @@ gunzip TRPV1_sharpened_-100_3.4A.map.gz
 We are ready to generate the confidence map by
 
 ```
-python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
+/programs/x86_64-linux/eman2/2.2/bin/python FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
 ```
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.

@@ -383,21 +383,21 @@ def calcQMap(map, mean, var, ECDF, windowSize, boxCoord, mask, method, test):
 
 	pMap = pMap * binaryMask;
 	pFlat = pMap.flatten();
-	pInBall = pFlat[pFlat != np.nan];
+	pInBall = pFlat[~np.isnan(pFlat)];
 
 	#do FDR control, i.e. calculate the qMap
 	print('Start FDR control ...');
-	qValues = FDR(pInBall, method);	
+	pAdjValues = pAdjust(pInBall, method);	
 
-	qFlat = np.copy(pFlat);
-	qFlat[qFlat != np.nan] = qValues;
-	qMap = np.reshape(qFlat, sizeMap);
-	qMap[qMap == np.nan] = 1.0;
+	pAdjFlat = np.copy(pFlat);
+	pAdjFlat[~np.isnan(pAdjFlat)] = pAdjValues;
+	pAdjMap = np.reshape(pAdjFlat, sizeMap);
+	pAdjMap[np.isnan(pAdjMap)] = 1.0;
 
-	return qMap;
+	return pAdjMap;
 
 #---------------------------------------------------------------------------------
-def FDR(pValues, method):
+def pAdjust(pValues, method):
 
 	#***********************************
 	#***** FDR correction methods ******
@@ -423,9 +423,17 @@ def FDR(pValues, method):
 		for i in range(numPVal-1, -1, -1):
 			pAdjust[i] =  min(prevPVal, pSort[i]*(numPVal/(i+1.0))*Hn);
 			prevPVal = pAdjust[i];
+	elif method == "Holm":
+		prevPVal = 0.0;
+		for i in range(numPVal):
+			tmpPVal = (numPVal - i)*pSort[i];
+			pAdjust[i] = max(prevPVal, tmpPVal);
+			prevPVal = pAdjust[i];
+		pAdjust[pAdjust>1.0] = 1.0;
+		
 	else:
-		print('Please specify a method');
-		return;	
+		print('Please specify a method. Execution is stopped ...');
+		quit();	
 
 	#sort back to the original order
 	pSortIndOrig = np.argsort(pSortInd);
@@ -582,10 +590,10 @@ def printSummary(args, time):
 	print(output);
 
 	#print method used for FDR-control
-	if args.FDRmethod is None:
-		output = "FDR was controlled with: BY";			
+	if args.method is None:
+		output = "Multiple Testing was controlled with: BY";			
 	else:
-		output = "FDR was controlled with: " + args.FDRmethod;
+		output = "Multiple Testing  was controlled with: " + args.method;
 	print(output);
 
 

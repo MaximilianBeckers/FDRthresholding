@@ -32,8 +32,8 @@ cmdl_parser.add_argument('-fdr', '--fdr', metavar="fdr",  type=float, required=F
                          help='False Discovery Rate');
 cmdl_parser.add_argument('-locResMap', metavar="locResMap.mrc", type=str, required=False,
 						help='Input local Resolution Map');
-cmdl_parser.add_argument('-FDRmethod', metavar="FDRmethod", type=str, required=False,
-						help="Input FDR method. 'BY' for Benjamini-Yekutieli or 'BH' for Benjamini-Hochberg");
+cmdl_parser.add_argument('-method', metavar="method", type=str, required=False,
+						help="Method for multiple testing correction. 'BY' for Benjamini-Yekutieli, 'BH' for Benjamini-Hochberg or 'Holm' for Holm FWER control");
 cmdl_parser.add_argument('-mm', '--model_map', metavar="model_map.mrc", type=str, required=False,
 						help="Input model map for model based amplitude scaling");
 cmdl_parser.add_argument('-w', '--window_size', metavar="windowSize", type=float, required=False,
@@ -122,11 +122,11 @@ def main():
 			mapData = lowPassFilter(np.fft.rfftn(mapData), frequencyMap, providedRes);
 
 		#handle FDR correction procedure
-		if args.FDRmethod is not None:
-			FDRmethod = args.FDRmethod;
+		if args.method is not None:
+			method = args.method;
 		else:
 			#default is Benjamini-Yekutieli
-			FDRmethod = 'BY';
+			method = 'BY';
 
 		if args.window_size is not None:
 			wn = args.window_size;
@@ -185,7 +185,7 @@ def main():
 			locFiltMap.close();	
 
 		#calculate the qMap
-		qMap = calcQMap(mapData, mean, var, ECDF, wn, boxCoord, circularMaskData, FDRmethod, testProc);	
+		qMap = calcQMap(mapData, mean, var, ECDF, wn, boxCoord, circularMaskData, method, testProc);	
 
 		#if a explicit thresholding is wished, do so
 		if args.fdr is not None:

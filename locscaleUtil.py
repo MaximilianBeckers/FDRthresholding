@@ -107,10 +107,10 @@ def prepare_mask_and_maps_for_scaling(args):
     elif args.window_size is not None: 
         wn = int(math.ceil(args.window_size / 2.) * 2);
 
-    if args.FDRmethod is not None:
-        FDRmethod = args.FDRmethod;
+    if args.method is not None:
+        method = args.method;
     else:
-        FDRmethod = 'BY';
+        method = 'BY';
 	
     if args.noiseBox is not None:
         boxCoord = args.noiseBox;
@@ -141,7 +141,7 @@ def prepare_mask_and_maps_for_scaling(args):
         locFilt = False;
         locResMapData = np.ones(emmap.shape);
 
-    return emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, FDRmethod, locFilt, locResMapData, boxCoord;
+    return emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMapData, boxCoord;
 
 def compute_radial_profile(volFFT, frequencyMap):
 
@@ -516,7 +516,7 @@ def write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pa
 def launch_amplitude_scaling(args):
 
     startTime = time.time();
-    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, FDRmethod, locFilt, locResMap, boxCoord = prepare_mask_and_maps_for_scaling(args); 
+    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord = prepare_mask_and_maps_for_scaling(args); 
     meanNoise, varNoise, sample = estimateNoiseFromMap(emmap, wn, boxCoord);
 
     #set output filenames
@@ -553,7 +553,7 @@ def launch_amplitude_scaling(args):
         if not args.ecdf:
             ecdfVol = 0;
 
-        qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, FDRmethod, testProc);
+        qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
         qVol = np.subtract(np.ones(qVol.shape), qVol);
 
         #write the volumes		
@@ -573,7 +573,7 @@ def launch_amplitude_scaling(args):
             if not args.ecdf:
                 ecdfVol = 0;
 
-            qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, FDRmethod, testProc);
+            qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
             qVol = np.subtract(np.ones(qVol.shape), qVol);
 
             #write the volumes
