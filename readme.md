@@ -15,7 +15,7 @@ The software is written in Python and itself dependent on NumPy libraries.
 
 ### Installing
 
-The folder just has to be copied to your computer.
+The folder just has to be copied to your computer and can be run with a NumPy capable python installation.
 
 
 ## How to use
@@ -99,3 +99,21 @@ python /path/to/FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
 ```
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
+
+
+## List of options
+
+
+###Required paramters
+
+    -em yourEMmap.mrc
+
+    -p pixelSize    
+
+
+###Optional parameters
+
+
+
+
+
