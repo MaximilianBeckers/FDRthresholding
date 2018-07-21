@@ -113,7 +113,7 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
 
 ### Optional parameters
 
-    -locResMap local resolution map    Example: -locResMap yourLocalResolutions.mrc
+    -locResMap local resolution map for local filtering    Example: -locResMap yourLocalResolutions.mrc
     
     -mm model map for LocScale    Example: -mm yourModelMap.mrc
     
@@ -133,6 +133,11 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
     
     -testProc use right-, left- or two-sided testing i.e. 'rightSide', 'leftSided'or 'twoSided'     Example: -testProc 'rightSided'
     
+    -fdr  threshold confidence map at the desired FDR     Example: -fdr 0.01 for 1%FDR
+    
+    -mpi  MPI parallelisation for LocScale     Example: -mpi
+    
+    -lowPassFilter resolution in Angstrom to low-pass filter the map before multiple testing     Example: -lowPassFilter 5
     
     
     
