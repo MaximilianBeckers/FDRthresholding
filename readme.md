@@ -125,6 +125,16 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
     
     -w_locscale window size for LocScale   Example: -w_locscale 15
     
+    -stepSize step size for LocScale      Example: -stepSize 5 (default)
+    
+    -ecdf use ECDF instead of Gaussian CDF for p-value calculation      Example: -ecdf
+    
+    -o filename for output      Example: -o out.mrc
+    
+    
+    
+    
+    
     
 
 
