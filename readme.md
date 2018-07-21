@@ -131,6 +131,7 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
     
     -o filename for output      Example: -o out.mrc
     
+    -testProc use right-, left- or two-sided testing i.e. 'rightSide', 'leftSided'or 'twoSided' Example: -testProc 'rightSided'
     
     
     
