@@ -104,16 +104,28 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
 ## List of options
 
 
-###Required paramters
+### Required paramters
 
-    -em yourEMmap.mrc
+    -em EM map    Example: -em yourEMmap.mrc
 
-    -p pixelSize    
-
-
-###Optional parameters
+    -p pixel size   Example: -p 1.06    
 
 
+### Optional parameters
+
+    -locResMap local resolution map    Example: -locResMap yourLocalResolutions.mrc
+    
+    -mm model map for LocScale    Example: -mm yourModelMap.mrc
+    
+    -w window size for background noise estimation   Example: -w 50
+    
+    -noiseBox box coordinates for background noise estimation    Example: -noiseBox 50 150 150
+    
+    -method: method for error control; 'BH' for Benjamini-Hochberg, 'BY' for Benjamini-Yekutieli (default) or 'Holm' for Holm FWER control
+    
+    -w_locscale window size for LocScale   Example: -w_locscale 15
+    
+    
 
 
 
