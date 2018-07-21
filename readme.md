@@ -121,7 +121,7 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
     
     -noiseBox box coordinates for background noise estimation    Example: -noiseBox 50 150 150
     
-    -method: method for error control; 'BH' for Benjamini-Hochberg, 'BY' for Benjamini-Yekutieli (default) or 'Holm' for Holm FWER control
+    -method: method for error control, 'BH' for Benjamini-Hochberg FDR-control, 'BY' for Benjamini-Yekutieli FDR-control (default) or 'Holm' for Holm FWER-control
     
     -w_locscale window size for LocScale   Example: -w_locscale 15
     
