@@ -133,7 +133,7 @@ The expected run time on normal desktop computer should be around 1-2 minutes fo
     
     -testProc use right-, left- or two-sided testing i.e. 'rightSided', 'leftSided'or 'twoSided'     Example: -testProc 'rightSided'
     
-    -fdr  threshold confidence map at the desired FDR     Example: -fdr 0.01 for 1%FDR
+    -fdr  threshold confidence map at the desired FDR     Example: -fdr 0.01
     
     -mpi  MPI parallelisation for LocScale     Example: -mpi
     
