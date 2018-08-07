@@ -86,7 +86,7 @@ def main():
 	
 		filename = args.em_map;
 		map = mrcfile.open(filename, mode='r+');
-		mapData = map.data;
+		mapData = np.copy(map.data);
 		
 		apix = args.apix;
 
@@ -159,12 +159,12 @@ def main():
 			#if varianceMap is given, use it
 			if args.varianceMap is not None:
 				varMap = mrcfile.open(args.varianceMap, mode='r+');
-				var = varMap.data;
+				var = np.copy(varMap.data);
 			
 			#if meanMap is given, use it
 			if args.meanMap is not None:
 				meanMap = mrcfile.open(args.meanMap, mode='r+');
-				mean = meanMap.data;
+				mean = np.copy(meanMap.data);
 
 			if np.isscalar(mean) and np.isscalar(var):	
 				output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var); 
@@ -175,7 +175,7 @@ def main():
 
 		else: #do localFiltration and estimate statistics from this map
 			locResMap = mrcfile.open(args.locResMap, mode='r+');
-			locResMapData = locResMap.data;
+			locResMapData = np.copy(locResMap.data);
 			mapData, mean, var, ECDF = localFiltration(mapData, locResMapData, apix, True, wn, boxCoord, args.mask, maskData, ECDF);		
 		
 			locFiltMap = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True)
