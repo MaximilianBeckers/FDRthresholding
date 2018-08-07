@@ -143,7 +143,7 @@ def main():
 		#if mask is provided, take it
 		if args.mask is not None:	
 			mask = mrcfile.open(args.mask, mode='r+');
-			maskData = mask.data;
+			maskData = np.copy(mask.data);
 		else:
 			maskData = circularMaskData;
 			
