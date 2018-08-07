@@ -77,8 +77,8 @@ def get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn):
 
 def prepare_mask_and_maps_for_scaling(args):
 
-    emmap = mrcfile.open(args.em_map).data;
-    modmap = mrcfile.open(args.model_map).data;
+    emmap = np.copy(mrcfile.open(args.em_map).data);
+    modmap = np.copy(mrcfile.open(args.model_map).data);
     
     if args.mask is None:
         mask = np.zeros(emmap.shape);
