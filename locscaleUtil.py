@@ -77,7 +77,30 @@ def get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn):
 
 def prepare_mask_and_maps_for_scaling(args):
 
-    emmap = np.copy(mrcfile.open(args.em_map).data);
+    #load the maps
+    if args.halfmap2 is not None:
+        if args.em_map is None:
+            print("One half map missing! Exit ...")
+            sys.exit();
+        else:
+            #load the maps
+	    filename = args.em_map;
+	    map1 = mrcfile.open(args.em_map, mode='r+');
+            halfMapData1 = np.copy(map1.data);
+
+            map2 = mrcfile.open(args.halfmap2, mode='r+');
+            halfMapData2 = np.copy(map2.data);
+
+            emmap = (halfMapData1 + halfMapData2)*0.5;
+            halfMapData1 = 0;
+            halfMapData2 = 0;
+                                
+    else:
+            #load single map
+            filename = args.em_map;
+            map = mrcfile.open(filename, mode='r+');
+            emmap = np.copy(map.data);
+
     modmap = np.copy(mrcfile.open(args.model_map).data);
     
     if args.mask is None:

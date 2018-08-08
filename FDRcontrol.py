@@ -11,6 +11,7 @@ import math
 import gc
 import os.path
 import time
+import sys
 import mrcfile
 
 #*************************************************************
@@ -24,6 +25,8 @@ cmdl_parser = argparse.ArgumentParser(
 
 cmdl_parser.add_argument('-em', '--em_map', metavar="em_map.mrc",  type=str, required=True,
                          help='Input filename EM map');
+cmdl_parser.add_argument('-halfmap2', '--halfmap2', metavar="halfmap2.mrc",  type=str, required=False,
+                         help='Input filename halfmap 2');
 cmdl_parser.add_argument('-mask', '--mask',metavar="mask",  type=str,
                          help='Input filename mask');
 cmdl_parser.add_argument('-p', '--apix', metavar="apix",  type=float, required=True,
@@ -83,11 +86,31 @@ def main():
 		print('************************************************');
 		print('******* Significance analysis of EM-Maps *******');
 		print('************************************************');
-	
-		filename = args.em_map;
-		map = mrcfile.open(filename, mode='r+');
-		mapData = np.copy(map.data);
-		
+
+                #load the maps
+                if args.halfmap2 is not None:
+                        if args.em_map is None:
+                                print("One half map missing! Exit ...")
+                                sys.exit();
+                        else:
+                                #load the maps
+				filename = args.em_map;
+				map1 = mrcfile.open(args.em_map, mode='r+');
+                                halfMapData1 = np.copy(map1.data);
+
+                                map2 = mrcfile.open(args.halfmap2, mode='r+');
+                                halfMapData2 = np.copy(map2.data);
+
+                                mapData = (halfMapData1 + halfMapData2)*0.5;
+                                halfMapData1 = 0;
+                                halfMapData2 = 0;
+                                
+                else:
+                        #load single map
+                        filename = args.em_map;
+                        map = mrcfile.open(filename, mode='r+');
+                        mapData = np.copy(map.data);
+
 		apix = args.apix;
 
 		#get boxCoordinates
