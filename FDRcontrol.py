@@ -87,29 +87,29 @@ def main():
 		print('******* Significance analysis of EM-Maps *******');
 		print('************************************************');
 
-                #load the maps
-                if args.halfmap2 is not None:
-                        if args.em_map is None:
-                                print("One half map missing! Exit ...")
-                                sys.exit();
-                        else:
-                                #load the maps
+		#load the maps
+		if args.halfmap2 is not None:
+			if args.em_map is None:
+				print("One half map missing! Exit ...")
+				sys.exit();
+			else:
+				#load the maps
 				filename = args.em_map;
 				map1 = mrcfile.open(args.em_map, mode='r+');
-                                halfMapData1 = np.copy(map1.data);
+				halfMapData1 = np.copy(map1.data);
 
-                                map2 = mrcfile.open(args.halfmap2, mode='r+');
-                                halfMapData2 = np.copy(map2.data);
+				map2 = mrcfile.open(args.halfmap2, mode='r+');
+				halfMapData2 = np.copy(map2.data);
 
-                                mapData = (halfMapData1 + halfMapData2)*0.5;
-                                halfMapData1 = 0;
-                                halfMapData2 = 0;
+				mapData = (halfMapData1 + halfMapData2)*0.5;
+				halfMapData1 = 0;
+				halfMapData2 = 0;
                                 
-                else:
-                        #load single map
-                        filename = args.em_map;
-                        map = mrcfile.open(filename, mode='r+');
-                        mapData = np.copy(map.data);
+		else:
+			#load single map
+			filename = args.em_map;
+			map = mrcfile.open(filename, mode='r+');
+			mapData = np.copy(map.data);
 
 		apix = args.apix;
 
