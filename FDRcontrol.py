@@ -142,7 +142,7 @@ def main():
 		if args.lowPassFilter is not None:
 			frequencyMap = calculate_frequency_map(mapData);
 			providedRes = apix/float(args.lowPassFilter);
-			mapData = lowPassFilter(np.fft.rfftn(mapData), frequencyMap, providedRes);
+			mapData = lowPassFilter(np.fft.rfftn(mapData), frequencyMap, providedRes, mapData.shape);
 
 		#handle FDR correction procedure
 		if args.method is not None:

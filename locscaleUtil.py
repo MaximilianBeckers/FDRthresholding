@@ -188,11 +188,11 @@ def compute_scale_factors(em_profile, ref_profile):
 
     return scale_factor;
 
-def set_radial_profile(volFFT, scaleFactors, frequencies, frequencyMap): 
+def set_radial_profile(volFFT, scaleFactors, frequencies, frequencyMap, shape): 
     
     scalingMap = np.interp(frequencyMap, frequencies, scaleFactors, right=1.0);	
     scaledMapFFT = scalingMap * volFFT;
-    scaledMap = np.real(np.fft.irfftn(scaledMapFFT));
+    scaledMap = np.real(np.fft.irfftn(scaledMapFFT, shape));
     
     return scaledMap, scaledMapFFT;
 
@@ -234,20 +234,20 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                 em_profile, frequencies_map = compute_radial_profile(emmap_wn_FFT, frequencyMap_mapWindow);
                 mod_profile, _ = compute_radial_profile(modmap_wn_FFT, frequencyMap_mapWindow);
                 scale_factors = compute_scale_factors(em_profile, mod_profile);
-                map_b_sharpened, map_b_sharpened_FFT = set_radial_profile(emmap_wn_FFT, scale_factors, frequencies_map, frequencyMap_mapWindow);
+                map_b_sharpened, map_b_sharpened_FFT = set_radial_profile(emmap_wn_FFT, scale_factors, frequencies_map, frequencyMap_mapWindow, emmap_wn.shape);
                   
                 #do interpolation of sharpening factors
                 scale_factors_noise = np.interp(frequencies_noise, frequencies_map, scale_factors);
 
                 #scale noise window with the interpolated scaling factors
-                mapNoise_sharpened, mapNoise_sharpened_FFT = set_radial_profile(np.copy(noiseMapFFT), scale_factors_noise, frequencies_noise, frequencyMap_noise);
+                mapNoise_sharpened, mapNoise_sharpened_FFT = set_radial_profile(np.copy(noiseMapFFT), scale_factors_noise, frequencies_noise, frequencyMap_noise, noiseMap.shape);
 
                 #local filtering routines
                 if locFilt == True:
                     tmpRes = round(apix/locResMap[k, j, i], 3);
                                                 
-                    mapNoise_sharpened = lowPassFilter(mapNoise_sharpened_FFT, frequencyMap_noise, tmpRes);
-                    map_b_sharpened = lowPassFilter(map_b_sharpened_FFT, frequencyMap_mapWindow, tmpRes);
+                    mapNoise_sharpened = lowPassFilter(mapNoise_sharpened_FFT, frequencyMap_noise, tmpRes, noiseMap.shape);
+                    map_b_sharpened = lowPassFilter(map_b_sharpened_FFT, frequencyMap_mapWindow, tmpRes, emmap_wn.shape);
                     
                     #calculate noise statistics	  
                     map_noise_sharpened_data = mapNoise_sharpened;	   

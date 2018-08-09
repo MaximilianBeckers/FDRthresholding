@@ -84,7 +84,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 			xInd, yInd, zInd = indices[0], indices[1], indices[2];
 			
 			#do local filtration
-			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes);
+			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
 
 			#set the filtered voxels
 			filteredMapData[xInd, yInd, zInd] = tmpFilteredMapData[xInd, yInd, zInd];
@@ -92,7 +92,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, m
 		else:
 			xInd, yInd, zInd = indices[0], indices[1], indices[2];
 			#do local filtration
-			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes);
+			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
 			#set the filtered voxels
 			filteredMapData[xInd, yInd, zInd] = tmpFilteredMapData[xInd, yInd, zInd];
 			if localVariance == True:

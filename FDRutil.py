@@ -501,7 +501,7 @@ def calculate_frequency_map(map):
     return frequencyMap;
 
 #---------------------------------------------------------------------------------
-def lowPassFilter(mapFFT, frequencyMap, cutoff):
+def lowPassFilter(mapFFT, frequencyMap, cutoff, shape):
 
 	#**********************************
 	#*** filter in fourier domain *****
@@ -514,7 +514,7 @@ def lowPassFilter(mapFFT, frequencyMap, cutoff):
 	filteredftMap = filterMap*mapFFT;
 	
 	#do ifft and get real parts
-	filteredMap = np.fft.irfftn(filteredftMap);
+	filteredMap = np.fft.irfftn(filteredftMap, shape);
 	filteredMap = np.real(filteredMap);
 	return filteredMap;
 
