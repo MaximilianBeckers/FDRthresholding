@@ -191,14 +191,17 @@ def AndersonDarling(sample):
 
 	#calculate p-values
 	# R.B. D'Augostino and M.A. Stephens, Eds., 1986, Goodness-of-Fit Techniques, Marcel Dekker
-	if Ad >= 0.6:
-		pVal = math.exp(1.2937 - 5.709*(Ad) + 0.0186*Ad*Ad);
-	elif 0.34<Ad<0.6:
-		pVal = math.exp(0.9177 - 4.279*Ad - 1.38 * Ad*Ad);
-	elif 0.2 < Ad <= 0.34:
-		pVal = 1 - math.exp(-8.318 + 42.796*Ad - 59.938*Ad*Ad);
-	else:
-		pVal = 1 - math.exp(-13.436 + 101.14 * Ad - 223.73 * Ad*Ad);
+	try:
+		if Ad >= 0.6:
+			pVal = math.exp(1.2937 - 5.709*(Ad) + 0.0186*Ad*Ad);
+		elif 0.34<Ad<0.6:
+			pVal = math.exp(0.9177 - 4.279*Ad - 1.38 * Ad*Ad);
+		elif 0.2 < Ad <= 0.34:
+			pVal = 1 - math.exp(-8.318 + 42.796*Ad - 59.938*Ad*Ad);
+		else:
+			pVal = 1 - math.exp(-13.436 + 101.14 * Ad - 223.73 * Ad*Ad);
+	except:
+		pVal = -1.0;
 
 	return Ad, pVal, numSamples;
 
@@ -258,7 +261,10 @@ def checkNormality(map, windowSize, boxCoord):
 	#do Anderson-Darling test for normality
 	AnDarl, pVal, n = AndersonDarling(sampleSort);
 	output = "Anderson-Darling test summary: " + repr(AnDarl) + ". p-Value: " + repr(pVal) + ". Sample size used: " + repr(n);
-	print(output);
+	if pVal != -1.0:
+		print(output);
+	else:
+		pVal = -1.0;		
 
 	if (Dn_tail > 0.01):
 		output = "WARNING: Deviation in the tail areas between the normal distribution and the empircal CDF is higher than 1%. If boxes for background noise estimation are set properly, please consider using the flag -ecdf to use the empirical CDF instead of the normal distribution."
