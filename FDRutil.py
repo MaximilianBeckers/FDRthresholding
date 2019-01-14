@@ -3,6 +3,7 @@ import subprocess
 import math
 import gc
 import os
+import sys
 
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group
 
@@ -48,7 +49,11 @@ def estimateNoiseFromMap(map, windowSize, boxCoord):
 	#estimate variance and mean from the sample
 	mean = np.mean(sampleMap);
 	var = np.var(sampleMap);
-	
+
+	if var == 0.0:
+		print("Variance is estimated to be 0. You are probably estimating noise in a masked region. Exit ...")
+		sys.exit();
+
 	return mean, var, sampleMap;
 #-------------------------------------------------------------------------------------
 def estimateNoiseFromMapInsideMask(map, mask):

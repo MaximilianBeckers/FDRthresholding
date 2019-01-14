@@ -178,7 +178,7 @@ def main():
 		if args.locResMap is None: #if no local Resolution map is given,don't do any filtration
 			
 			mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
-		
+						
 			#if varianceMap is given, use it
 			if args.varianceMap is not None:
 				varMap = mrcfile.open(args.varianceMap, mode='r+');
