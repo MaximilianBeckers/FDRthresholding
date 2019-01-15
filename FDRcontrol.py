@@ -239,7 +239,19 @@ def main():
 			maskedMapMRC.set_data(maskedMap);
 			maskedMapMRC.voxel_size = apix;
 			maskedMapMRC.close();
+		
+		else:
+			#threshold the qMap
+                        fdr = 0.01;
+			binMap = binarizeMap(qMap, fdr);
 
+                        #apply the thresholded qMap to data
+                        maskedMap = np.multiply(binMap, np.copy(mapData));
+                        minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
+
+                        if args.locResMap is None: #if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
+                        	output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
+                        	print(output);
 	
 		#invert qMap for visualization tools
 		confidenceMap = np.subtract(1.0, qMap);
