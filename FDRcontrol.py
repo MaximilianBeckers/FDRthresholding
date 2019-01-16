@@ -1,9 +1,7 @@
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group (2017)
 
 #import some stuff
-from FDRutil import *
-from mapUtil import *
-from locscaleUtil import *
+from confidenceMapUtil import mapUtil, locscaleUtil, FDRutil
 import numpy as np
 import argparse, os, sys
 import subprocess
@@ -66,6 +64,7 @@ cmdl_parser.add_argument('-stepSize', '--stepSize', metavar="stepSize_locScale",
 #********************** main function ***********************
 #************************************************************
 
+        
 def main():
 
 	start = time.time();
@@ -80,7 +79,7 @@ def main():
 			print("Step Size cannot be bigger than the window_size. Job is killed ...")
 			return;
 
-		launch_amplitude_scaling(args);
+		locscaleUtil.launch_amplitude_scaling(args);
 	else:	
 		#no ampltidue scaling will be done
 		print('************************************************');
@@ -111,25 +110,6 @@ def main():
 			map = mrcfile.open(filename, mode='r+');
 			mapData = np.copy(map.data);
 
-		apix = args.apix;
-
-		#get boxCoordinates
-		if args.noiseBox is None:
-			boxCoord = 0;
-		else:
-			boxCoord = args.noiseBox;
-		
-		#set test procdure
-		if args.testProc is not None:
-			testProc = args.testProc;
-		else:
-			testProc = 'rightSided';
-
-		#set ECDF
-		if args.ecdf:
-			ECDF = 1;
-		else:
-			ECDF = 0;
 
 		#set output filename
 		if args.outputFilename is not None:
@@ -137,139 +117,71 @@ def main():
 		else:
 			splitFilename = os.path.splitext(os.path.basename(filename));
 
-		sizeMap = mapData.shape;
-
-		if args.lowPassFilter is not None:
-			frequencyMap = calculate_frequency_map(mapData);
-			providedRes = apix/float(args.lowPassFilter);
-			mapData = lowPassFilter(np.fft.rfftn(mapData), frequencyMap, providedRes, mapData.shape);
-
-		#handle FDR correction procedure
-		if args.method is not None:
-			method = args.method;
-		else:
-			#default is Benjamini-Yekutieli
-			method = 'BY';
-
-		if args.window_size is not None:
-			wn = args.window_size;
-			wn = int(wn);
-			if wn < 20:
-				print("Provided window size is quite small. Please think about potential inaccuracies of your noise estimates!");
-		else: 
-			wn = max(int(0.05*sizeMap[0]),10);
-
-		#generate a circular Mask
-		sphere_radius = (np.min(sizeMap) // 2);
-		circularMaskData = makeCircularMask( np.copy(mapData), sphere_radius);
 
 		#if mask is provided, take it
 		if args.mask is not None:	
 			mask = mrcfile.open(args.mask, mode='r+');
 			maskData = np.copy(mask.data);
 		else:
-			maskData = circularMaskData;
+			maskData = None;
+
+		#if varianceMap is given, use it
+		if args.varianceMap is not None:
+			varMap = mrcfile.open(args.varianceMap, mode='r+');
+			varMapData = np.copy(varMap.data);
+		else:
+			varMapData = None;
 			
-		#do some diagnostics and check for normality of map	
-		makeDiagnosticPlot(mapData, wn, 0, False, boxCoord);
-		checkNormality(mapData, wn, boxCoord);
+		#if meanMap is given, use it
+		if args.meanMap is not None:
+			meanMap = mrcfile.open(args.meanMap, mode='r+');
+			meanMapData = np.copy(meanMap.data);
+		else:
+			meanMapData = None;
 
-		#estimate noise statistics
-		if args.locResMap is None: #if no local Resolution map is given,don't do any filtration
-			
-			mean, var, _ = estimateNoiseFromMap(mapData, wn, boxCoord);
-						
-			#if varianceMap is given, use it
-			if args.varianceMap is not None:
-				varMap = mrcfile.open(args.varianceMap, mode='r+');
-				var = np.copy(varMap.data);
-			
-			#if meanMap is given, use it
-			if args.meanMap is not None:
-				meanMap = mrcfile.open(args.meanMap, mode='r+');
-				mean = np.copy(meanMap.data);
-
-			if np.isscalar(mean) and np.isscalar(var):	
-				output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var); 
-			else:
-				output = "Using user provided noise statistics"; 
-
-			print(output);
-
-		else: #do localFiltration and estimate statistics from this map
+		#if local resolutions are given, use them
+		if args.locResMap is not None:
 			locResMap = mrcfile.open(args.locResMap, mode='r+');
 			locResMapData = np.copy(locResMap.data);
-			mapData, mean, var, ECDF = localFiltration(mapData, locResMapData, apix, True, wn, boxCoord, args.mask, maskData, ECDF);		
-		
-			locFiltMap = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True)
-			mapData = np.float32(mapData); 
-			locFiltMap.set_data(mapData);
-			locFiltMap.voxel_size = apix;
-			locFiltMap.close();	
+		else:
+			locResMapData = None;
 
-		#calculate the qMap
-		qMap = calcQMap(mapData, mean, var, ECDF, wn, boxCoord, circularMaskData, method, testProc);	
-
-		#if a explicit thresholding is wished, do so
-		if args.fdr is not None:
+		#run the actual analysis
+		confidenceMap, locFiltMap, binMap, maskedMap = FDRutil.calculateConfidenceMap(mapData, args.apix, args.noiseBox, args.testProc, args.ecdf, args.lowPassFilter, args.method, args.window_size, locResMapData, meanMapData, varMapData, args.fdr);
 			
-			fdr = args.fdr;
-		
-			#threshold the qMap
-			binMap = binarizeMap(qMap, fdr);
-		
-			#apply the thresholded qMap to data
-			maskedMap = np.multiply(binMap, mapData);
-			minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
+		if locFiltMap is not None:
+			locFiltMapMRC = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True);
+			locFiltMap = np.float32(locFiltMap);
+			locFiltMapMRC.set_data(locFiltMap);
+			locFiltMapMRC.voxel_size = args.apix;
+			locFiltMapMRC.close();
 
-			maskedMap = np.multiply(maskedMap, maskData);
-
-			if args.locResMap is None: #if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration 
-				output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
-				print(output);	   
-	
-			binMapMRC = mrcfile.new(splitFilename[0] + '_FDR' + str(fdr) + '_binMap.mrc', overwrite=True);
+		if binMap is not None:
+			binMapMRC = mrcfile.new(splitFilename[0] + '_FDR' + str(args.fdr) + '_binMap.mrc', overwrite=True);
 			binMap = np.float32(binMap);
 			binMapMRC.set_data(binMap);
-			binMapMRC.voxel_size = apix;
+			binMapMRC.voxel_size = args.apix;
 			binMapMRC.close();
 
-			maskedMapMRC = mrcfile.new(splitFilename[0] + '_FDR'+ str(fdr) + '_maskedMap.mrc', overwrite=True);
+		if maskedMap is not None:
+			maskedMapMRC = mrcfile.new(splitFilename[0] + '_FDR'+ str(args.fdr) + '_maskedMap.mrc', overwrite=True);
 			maskedMap = np.float32(maskedMap);
 			maskedMapMRC.set_data(maskedMap);
-			maskedMapMRC.voxel_size = apix;
+			maskedMapMRC.voxel_size = args.apix;
 			maskedMapMRC.close();
-		
-		else:
-			#threshold the qMap
-                        fdr = 0.01;
-			binMap = binarizeMap(qMap, fdr);
-
-                        #apply the thresholded qMap to data
-                        maskedMap = np.multiply(binMap, np.copy(mapData));
-                        minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
-
-                        if args.locResMap is None: #if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
-                        	output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
-                        	print(output);
 	
-		#invert qMap for visualization tools
-		confidenceMap = np.subtract(1.0, qMap);
-	
-		#apply lowpass-filtered mask to maps
-		confidenceMap = np.multiply(confidenceMap, circularMaskData);
 			
 		#write the confidence Maps
 		confidenceMapMRC = mrcfile.new(splitFilename[0] + '_confidenceMap.mrc', overwrite=True);
 		confidenceMap = np.float32(confidenceMap);
 		confidenceMapMRC.set_data(confidenceMap);
-		confidenceMapMRC.voxel_size = apix;
+		confidenceMapMRC.voxel_size = args.apix;
 		confidenceMapMRC.close();
 
 		end = time.time();
 		totalRuntime = end -start;
 
-		printSummary(args, totalRuntime);
+		mapUtil.printSummary(args, totalRuntime);
 
 if (__name__ == "__main__"):
 	main()

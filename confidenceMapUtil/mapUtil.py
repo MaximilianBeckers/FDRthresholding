@@ -14,7 +14,7 @@ from time import sleep
 
 
 #------------------------------------------------------------------------------------------------------
-def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, maskFileName, maskData, ECDF):
+def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, ECDF):
 
 	#**************************************************
 	#**** function to perform a local filtration ******

@@ -4,8 +4,131 @@ import math
 import gc
 import os
 import sys
+import mapUtil
 
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group
+
+def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter_resolution, method, window_size, locResMap,
+						   meanMap, varMap, fdr):
+
+	#*********************************************
+	#******* this function calc. confMaps ********
+	#*********************************************
+
+	# get boxCoordinates
+	if noiseBox is None:
+		boxCoord = 0;
+	else:
+		boxCoord = noiseBox;
+
+	# set test procdure
+	if testProc is not None:
+		testProc = testProc;
+	else:
+		testProc = 'rightSided';
+
+	# set ECDF
+	if ecdf:
+		ECDF = 1;
+	else:
+		ECDF = 0;
+
+	sizeMap = em_map.shape;
+
+	if lowPassFilter is not None:
+		frequencyMap = calculate_frequency_map(em_map);
+		providedRes = apix/float(lowPassFilter_resolution);
+		em_map = lowPassFilter(np.fft.rfftn(em_map), frequencyMap, providedRes, em_map.shape);
+
+	# handle FDR correction procedure
+	if method is not None:
+		method = method;
+	else:
+		# default is Benjamini-Yekutieli
+		method = 'BY';
+
+	if window_size is not None:
+		wn = window_size;
+		wn = int(wn);
+		if wn < 20:
+			print("Provided window size is quite small. Please think about potential inaccuracies of your noise estimates!");
+	else:
+		wn = max(int(0.05 * sizeMap[0]), 10);
+
+	# generate a circular Mask
+	sphere_radius = (np.min(sizeMap) // 2);
+	circularMaskData = mapUtil.makeCircularMask(np.copy(em_map), sphere_radius);
+
+	# do some diagnostics and check for normality of map
+	mapUtil.makeDiagnosticPlot(em_map, wn, 0, False, boxCoord);
+	checkNormality(em_map, wn, boxCoord);
+
+	# estimate noise statistics
+	if locResMap is None:  # if no local Resolution map is given,don't do any filtration
+
+		mean, var, _ = estimateNoiseFromMap(em_map, wn, boxCoord);
+
+		if varMap is not None:
+			var = varMap;
+		if meanMap is not None:
+			mean = meanMap;
+
+		if np.isscalar(mean) and np.isscalar(var):
+			output = "Estimated noise statistics: mean: " + repr(mean) + " and variance: " + repr(var);
+		else:
+			output = "Using user provided noise statistics";
+			print(output);
+
+		locFiltMap = None;
+
+	else:  # do localFiltration and estimate statistics from this map
+
+		em_map, mean, var, ECDF = mapUtil.localFiltration(em_map, locResMap, apix, True, wn, boxCoord, ECDF);
+		locFiltMap = em_map;
+
+	# calculate the qMap
+	qMap = calcQMap(em_map, mean, var, ECDF, wn, boxCoord, circularMaskData, method, testProc);
+
+	# if a explicit thresholding is wished, do so
+	if fdr is not None:
+
+		fdr = fdr;
+
+		# threshold the qMap
+		binMap = binarizeMap(qMap, fdr);
+
+		# apply the thresholded qMap to data
+		maskedMap = np.multiply(binMap, em_map);
+		minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
+
+		maskedMap = np.multiply(maskedMap, circularMaskData);
+
+		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
+			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
+			print(output);
+	else:
+		# threshold the qMap
+		fdr = 0.01;
+		binMap = binarizeMap(qMap, fdr);
+
+		# apply the thresholded qMap to data
+		maskedMap = np.multiply(binMap, np.copy(em_map));
+		minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
+
+		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
+			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
+			print(output);
+
+		binMap = None;
+		maskedMap = None;
+
+	# invert qMap for visualization tools
+	confidenceMap = np.subtract(1.0, qMap);
+
+	# apply lowpass-filtered mask to maps
+	confidenceMap = np.multiply(confidenceMap, circularMaskData);
+
+	return confidenceMap, locFiltMap, binMap, maskedMap;
 
 #-------------------------------------------------------------------------------------
 def estimateNoiseFromMap(map, windowSize, boxCoord):
