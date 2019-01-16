@@ -35,7 +35,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 
 	sizeMap = em_map.shape;
 
-	if lowPassFilter is not None:
+	if lowPassFilter_resolution is not None:
 		frequencyMap = calculate_frequency_map(em_map);
 		providedRes = apix/float(lowPassFilter_resolution);
 		em_map = lowPassFilter(np.fft.rfftn(em_map), frequencyMap, providedRes, em_map.shape);
