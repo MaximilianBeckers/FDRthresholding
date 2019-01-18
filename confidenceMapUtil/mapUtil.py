@@ -245,7 +245,7 @@ def makeCircularMask(map, sphereRadius):
 	y = np.linspace(-math.floor(mapSize[1]/2.0), -math.floor(mapSize[1]/2.0) + mapSize[1], mapSize[1]);
 	z = np.linspace(-math.floor(mapSize[2]/2.0), -math.floor(mapSize[2]/2.0) + mapSize[2], mapSize[2]);
 
-	xx, yy, zz = np.meshgrid(x, y, z);
+	xx, yy, zz = np.meshgrid(x, y, z, indexing='ij');
 
 	mask = np.sqrt(xx**2 + yy**2 + zz**2);
 

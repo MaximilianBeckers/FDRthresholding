@@ -8,6 +8,7 @@ import mapUtil
 
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group
 
+#--------------------------------------------------------------------------
 def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter_resolution, method, window_size, locResMap,
 						   meanMap, varMap, fdr):
 
