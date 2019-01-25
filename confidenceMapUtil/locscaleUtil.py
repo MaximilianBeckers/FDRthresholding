@@ -85,10 +85,11 @@ def prepare_mask_and_maps_for_scaling(args):
         else:
             #load the maps
 	    filename = args.em_map;
-	    map1 = mrcfile.open(args.em_map, mode='r+');
+	    map1 = mrcfile.open(args.em_map, mode='r');
+            apix = float(map1.voxel_size.x);
             halfMapData1 = np.copy(map1.data);
 
-            map2 = mrcfile.open(args.halfmap2, mode='r+');
+            map2 = mrcfile.open(args.halfmap2, mode='r');
             halfMapData2 = np.copy(map2.data);
 
             emmap = (halfMapData1 + halfMapData2)*0.5;
@@ -98,8 +99,14 @@ def prepare_mask_and_maps_for_scaling(args):
     else:
             #load single map
             filename = args.em_map;
-            map = mrcfile.open(filename, mode='r+');
+            map = mrcfile.open(filename, mode='r');
+            apix = float(map.voxel_size.x);
             emmap = np.copy(map.data);
+
+    if args.apix is None:
+        output = "Pixel size was read from file as " + "%.2f" %apix + " Angstrom. If this is incorrect, run the program with the flag -p pixelSize";
+        print(output);
+        args.apix = apix;       
 
     modmap = np.copy(mrcfile.open(args.model_map).data);
     
@@ -539,7 +546,7 @@ def write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pa
 def launch_amplitude_scaling(args):
 
     startTime = time.time();
-    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord = prepare_mask_and_maps_for_scaling(args); 
+    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord= prepare_mask_and_maps_for_scaling(args); 
     meanNoise, varNoise, sample = estimateNoiseFromMap(emmap, wn, boxCoord);
 
     #set output filenames
@@ -585,7 +592,10 @@ def launch_amplitude_scaling(args):
 
         endTime = time.time()
         runTime = endTime - startTime
-        makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
+       
+        pp = makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
+        pp.savefig("diag_image.pdf");
+        pp.close();
         printSummary(args, runTime)
 
     elif args.mpi:
@@ -605,6 +615,8 @@ def launch_amplitude_scaling(args):
 
             endTime = time.time()
             runTime = endTime - startTime;
-            makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
+            pp = makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
+            pp.savefig("diag_image.pdf");
+            pp.close();
             printSummary(args, runTime);
 

@@ -70,8 +70,13 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 	#printProgressBar(counter, numRes, prefix = 'Progress:', suffix = 'Complete', bar_length = 50)
 	print("Start local filtering. This might take a few minutes ...");
 
+	counterRes = 0;
 	for tmpRes in locResArray:   
-		#print(tmpRes);
+		counterRes = counterRes + 1;
+		progress = counterRes/float(numRes);
+		if counterRes%(int(numRes/20.0)) == 0:
+			output = "%.1f" %(progress*100) + "% finished ..." ;
+			print(output);
 		
 		#get indices of voxels with the current resolution	
 		indices = np.where(locResMapData == tmpRes);
@@ -179,7 +184,6 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 	plt.gray(); #make grayscale images
 	plt.rc('xtick', labelsize=8);    # fontsize of the tick labels
 	plt.rc('ytick', labelsize=8);    # fontsize of the tick labels
-	pp = PdfPages('diag_image.pdf');
 	gs = gridspec.GridSpec(1, 3);
 
 	#add image of y-z slice
@@ -202,11 +206,8 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 	ax3.set_xlabel('Y');
 	ax3.set_ylabel('X');
 	ax3.imshow(sliceMapXY);
-
-	pp.savefig();
-	pp.close();
-	plt.close();
-
+		
+	return plt;
 #------------------------------------------------------------------------------------------------
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, bar_length = 100):
      

@@ -27,7 +27,7 @@ cmdl_parser.add_argument('-halfmap2', '--halfmap2', metavar="halfmap2.mrc",  typ
                          help='Input filename halfmap 2');
 cmdl_parser.add_argument('-mask', '--mask',metavar="mask",  type=str,
                          help='Input filename mask');
-cmdl_parser.add_argument('-p', '--apix', metavar="apix",  type=float, required=True,
+cmdl_parser.add_argument('-p', '--apix', metavar="apix",  type=float, required=False,
                          help='pixel Size of input map');
 cmdl_parser.add_argument('-fdr', '--fdr', metavar="fdr",  type=float, required=False,
                          help='False Discovery Rate');
@@ -94,10 +94,11 @@ def main():
 			else:
 				#load the maps
 				filename = args.em_map;
-				map1 = mrcfile.open(args.em_map, mode='r+');
+				map1 = mrcfile.open(args.em_map, mode='r');
+				args.apix = map1.voxel_size.x;
 				halfMapData1 = np.copy(map1.data);
-
-				map2 = mrcfile.open(args.halfmap2, mode='r+');
+				
+				map2 = mrcfile.open(args.halfmap2, mode='r');
 				halfMapData2 = np.copy(map2.data);
 
 				mapData = (halfMapData1 + halfMapData2)*0.5;
@@ -107,10 +108,11 @@ def main():
 		else:
 			#load single map
 			filename = args.em_map;
-			map = mrcfile.open(filename, mode='r+');
+			map = mrcfile.open(filename, mode='r');
+			args.apix = float(map.voxel_size.x);
 			mapData = np.copy(map.data);
-
-
+			
+			
 		#set output filename
 		if args.outputFilename is not None:
 			splitFilename = os.path.splitext(os.path.basename(args.outputFilename));
@@ -120,28 +122,28 @@ def main():
 
 		#if mask is provided, take it
 		if args.mask is not None:	
-			mask = mrcfile.open(args.mask, mode='r+');
+			mask = mrcfile.open(args.mask, mode='r');
 			maskData = np.copy(mask.data);
 		else:
 			maskData = None;
 
 		#if varianceMap is given, use it
 		if args.varianceMap is not None:
-			varMap = mrcfile.open(args.varianceMap, mode='r+');
+			varMap = mrcfile.open(args.varianceMap, mode='r');
 			varMapData = np.copy(varMap.data);
 		else:
 			varMapData = None;
 			
 		#if meanMap is given, use it
 		if args.meanMap is not None:
-			meanMap = mrcfile.open(args.meanMap, mode='r+');
+			meanMap = mrcfile.open(args.meanMap, mode='r');
 			meanMapData = np.copy(meanMap.data);
 		else:
 			meanMapData = None;
 
 		#if local resolutions are given, use them
 		if args.locResMap is not None:
-			locResMap = mrcfile.open(args.locResMap, mode='r+');
+			locResMap = mrcfile.open(args.locResMap, mode='r');
 			locResMapData = np.copy(locResMap.data);
 		else:
 			locResMapData = None;

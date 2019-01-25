@@ -16,6 +16,10 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	#******* this function calc. confMaps ********
 	#*********************************************
 
+	#print pixelSize and give feedback to the user
+	output = "Pixel size was read as " + "%.2f" %apix + " Angstrom. If this is incorrect, please specify with -p pixelSize";
+	print(output);
+
 	# get boxCoordinates
 	if noiseBox is None:
 		boxCoord = 0;
@@ -60,8 +64,11 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	sphere_radius = (np.min(sizeMap) // 2);
 	circularMaskData = mapUtil.makeCircularMask(np.copy(em_map), sphere_radius);
 
-	# do some diagnostics and check for normality of map
-	mapUtil.makeDiagnosticPlot(em_map, wn, 0, False, boxCoord);
+	# plot locations of noise estimation
+	pp = mapUtil.makeDiagnosticPlot(em_map, wn, 0, False, boxCoord);
+	pp.savefig("diag_image.pdf");
+	pp.close();
+
 	checkNormality(em_map, wn, boxCoord);
 
 	# estimate noise statistics
@@ -105,7 +112,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 		maskedMap = np.multiply(maskedMap, circularMaskData);
 
 		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
-			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
+			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr*100) + "%.";
 			print(output);
 	else:
 		# threshold the qMap
@@ -117,7 +124,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 		minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
 
 		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
-			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr);
+			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr*100) + "%.";
 			print(output);
 
 		binMap = None;
@@ -721,7 +728,7 @@ def printSummary(args, time):
 			print(output);
 
 	#print pixel size
-	output = "Pixel size: " + repr(args.apix);
+	output = "Pixel size: " + "%.2f" %args.apix;
 	print(output);
 
 	#print method used for FDR-control
