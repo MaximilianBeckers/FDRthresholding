@@ -5,12 +5,13 @@ import gc
 import os
 import sys
 import mapUtil
+import locscaleUtil
 
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group
 
 #--------------------------------------------------------------------------
 def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter_resolution, method, window_size, locResMap,
-						   meanMap, varMap, fdr):
+						   meanMap, varMap, fdr, modelMap, stepSize, windowSizeLocScale, mpi):
 
 	#*********************************************
 	#******* this function calc. confMaps ********
@@ -60,20 +61,33 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	else:
 		wn = max(int(0.05 * sizeMap[0]), 10);
 
+	if windowSizeLocScale is not None:
+		wn_locscale = windowSizeLocScale;
+	else:
+		wn_locscale = None;
+
+	if stepSize is None:
+		stepSize = 5;
+
 	# generate a circular Mask
 	sphere_radius = (np.min(sizeMap) // 2);
 	circularMaskData = mapUtil.makeCircularMask(np.copy(em_map), sphere_radius);
 
 	# plot locations of noise estimation
-	pp = mapUtil.makeDiagnosticPlot(em_map, wn, 0, False, boxCoord);
-	pp.savefig("diag_image.pdf");
-	pp.close();
+	if modelMap is None:
+		pp = mapUtil.makeDiagnosticPlot(em_map, wn, False, boxCoord);
+		pp.savefig("diag_image.pdf");
+		pp.close();
+	else:
+		pp = mapUtil.makeDiagnosticPlot(em_map, wn, True, boxCoord);
+		pp.savefig("diag_image.pdf");
+		pp.close();	
 
-	checkNormality(em_map, wn, boxCoord);
 
 	# estimate noise statistics
-	if locResMap is None:  # if no local Resolution map is given,don't do any filtration
+	if ((locResMap is None) & (modelMap is None)):  # if no local Resolution map is given,don't do any filtration
 
+		checkNormality(em_map, wn, boxCoord);
 		mean, var, _ = estimateNoiseFromMap(em_map, wn, boxCoord);
 
 		if varMap is not None:
@@ -88,11 +102,18 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 			print(output);
 
 		locFiltMap = None;
+		locScaleMap = None;
 
-	else:  # do localFiltration and estimate statistics from this map
+	elif (locResMap is not None) & (modelMap is None):  # do localFiltration and estimate statistics from this map
 
+		checkNormality(em_map, wn, boxCoord);
 		em_map, mean, var, ECDF = mapUtil.localFiltration(em_map, locResMap, apix, True, wn, boxCoord, ECDF);
 		locFiltMap = em_map;
+		locScaleMap = None;
+	else:
+		em_map, mean, var, ECDF = locscaleUtil.launch_amplitude_scaling(em_map, modelMap, apix, stepSize, wn_locscale, wn, method, locResMap, boxCoord, mpi, ECDF );
+		locScaleMap = em_map;
+		locFiltMap = None;
 
 	# calculate the qMap
 	qMap = calcQMap(em_map, mean, var, ECDF, wn, boxCoord, circularMaskData, method, testProc);
@@ -111,7 +132,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 
 		maskedMap = np.multiply(maskedMap, circularMaskData);
 
-		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
+		if (locResMap is None) & (modelMap is None):  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
 			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr*100) + "%.";
 			print(output);
 	else:
@@ -123,7 +144,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 		maskedMap = np.multiply(binMap, np.copy(em_map));
 		minMapValue = np.min(maskedMap[np.nonzero(maskedMap)]);
 
-		if locResMap is None:  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
+		if (locResMap is None) & (modelMap is None):  # if no local Resolution map is give, then give the correspoding threshold, not usefule with local filtration
 			output = "Calculated map threshold: " + repr(minMapValue) + " at a FDR of " + repr(fdr*100) + "%.";
 			print(output);
 
@@ -136,7 +157,7 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	# apply lowpass-filtered mask to maps
 	confidenceMap = np.multiply(confidenceMap, circularMaskData);
 
-	return confidenceMap, locFiltMap, binMap, maskedMap;
+	return confidenceMap, locFiltMap, locScaleMap, binMap, maskedMap;
 
 #-------------------------------------------------------------------------------------
 def estimateNoiseFromMap(map, windowSize, boxCoord):
@@ -151,6 +172,7 @@ def estimateNoiseFromMap(map, windowSize, boxCoord):
 		sizeMap = map.shape;
 		sizePatch = np.array([windowSize, windowSize, windowSize]);
 		center = np.array([0.5*sizeMap[0], 0.5*sizeMap[1], 0.5*sizeMap[2]]);
+		
 		sampleMap1 = map[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
 		int(0.02*sizeMap[1]):(int(0.02*sizeMap[1]) + sizePatch[1]),
 		(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))];

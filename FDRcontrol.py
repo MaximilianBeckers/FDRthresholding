@@ -25,8 +25,6 @@ cmdl_parser.add_argument('-em', '--em_map', metavar="em_map.mrc",  type=str, req
                          help='Input filename EM map');
 cmdl_parser.add_argument('-halfmap2', '--halfmap2', metavar="halfmap2.mrc",  type=str, required=False,
                          help='Input filename halfmap 2');
-cmdl_parser.add_argument('-mask', '--mask',metavar="mask",  type=str,
-                         help='Input filename mask');
 cmdl_parser.add_argument('-p', '--apix', metavar="apix",  type=float, required=False,
                          help='pixel Size of input map');
 cmdl_parser.add_argument('-fdr', '--fdr', metavar="fdr",  type=float, required=False,
@@ -72,118 +70,133 @@ def main():
 	#get command line input
 	args = cmdl_parser.parse_args();
 
-	#if a model map is given, local amplitude scaling will be done
-	if args.model_map is not None:
-		
-		if args.stepSize > args.window_size_locscale:
-			print("Step Size cannot be bigger than the window_size. Job is killed ...")
-			return;
+	#no ampltidue scaling will be done
+	print('************************************************');
+	print('******* Significance analysis of EM-Maps *******');
+	print('************************************************');
 
-		locscaleUtil.launch_amplitude_scaling(args);
-	else:	
-		#no ampltidue scaling will be done
-		print('************************************************');
-		print('******* Significance analysis of EM-Maps *******');
-		print('************************************************');
-
-		#load the maps
-		if args.halfmap2 is not None:
-			if args.em_map is None:
-				print("One half map missing! Exit ...")
-				sys.exit();
-			else:
-				#load the maps
-				filename = args.em_map;
-				map1 = mrcfile.open(args.em_map, mode='r');
-				args.apix = map1.voxel_size.x;
-				halfMapData1 = np.copy(map1.data);
-				
-				map2 = mrcfile.open(args.halfmap2, mode='r');
-				halfMapData2 = np.copy(map2.data);
-
-				mapData = (halfMapData1 + halfMapData2)*0.5;
-				halfMapData1 = 0;
-				halfMapData2 = 0;
-                                
+	#load the maps
+	if args.halfmap2 is not None:
+		if args.em_map is None:
+			print("One half map missing! Exit ...")
+			sys.exit();
 		else:
-			#load single map
+			#load the maps
 			filename = args.em_map;
-			map = mrcfile.open(filename, mode='r');
-			args.apix = float(map.voxel_size.x);
-			mapData = np.copy(map.data);
+			map1 = mrcfile.open(args.em_map, mode='r');
+			args.apix = map1.voxel_size.x;
+			halfMapData1 = np.copy(map1.data);
+			
+			map2 = mrcfile.open(args.halfmap2, mode='r');
+			halfMapData2 = np.copy(map2.data);
+
+			mapData = (halfMapData1 + halfMapData2)*0.5;
+			halfMapData1 = 0;
+			halfMapData2 = 0;
+                                
+	else:
+		#load single map
+		filename = args.em_map;
+		map = mrcfile.open(filename, mode='r');
+		args.apix = float(map.voxel_size.x);
+		mapData = np.copy(map.data);
 			
 			
-		#set output filename
-		if args.outputFilename is not None:
-			splitFilename = os.path.splitext(os.path.basename(args.outputFilename));
-		else:
-			splitFilename = os.path.splitext(os.path.basename(filename));
+	#set output filename
+	if args.outputFilename is not None:
+		splitFilename = os.path.splitext(os.path.basename(args.outputFilename));
+	else:
+		splitFilename = os.path.splitext(os.path.basename(filename));
 
-
-		#if mask is provided, take it
-		if args.mask is not None:	
-			mask = mrcfile.open(args.mask, mode='r');
-			maskData = np.copy(mask.data);
-		else:
-			maskData = None;
-
-		#if varianceMap is given, use it
-		if args.varianceMap is not None:
-			varMap = mrcfile.open(args.varianceMap, mode='r');
-			varMapData = np.copy(varMap.data);
-		else:
-			varMapData = None;
+	#if varianceMap is given, use it
+	if args.varianceMap is not None:
+		varMap = mrcfile.open(args.varianceMap, mode='r');
+		varMapData = np.copy(varMap.data);
+	else:
+		varMapData = None;
 			
-		#if meanMap is given, use it
-		if args.meanMap is not None:
-			meanMap = mrcfile.open(args.meanMap, mode='r');
-			meanMapData = np.copy(meanMap.data);
-		else:
-			meanMapData = None;
+	#if meanMap is given, use it
+	if args.meanMap is not None:
+		meanMap = mrcfile.open(args.meanMap, mode='r');
+		meanMapData = np.copy(meanMap.data);
+	else:
+		meanMapData = None;
 
-		#if local resolutions are given, use them
-		if args.locResMap is not None:
-			locResMap = mrcfile.open(args.locResMap, mode='r');
-			locResMapData = np.copy(locResMap.data);
-		else:
-			locResMapData = None;
+	#if local resolutions are given, use them
+	if args.locResMap is not None:
+		locResMap = mrcfile.open(args.locResMap, mode='r');
+		locResMapData = np.copy(locResMap.data);
+	else:
+		locResMapData = None;
 
-		#run the actual analysis
-		confidenceMap, locFiltMap, binMap, maskedMap = FDRutil.calculateConfidenceMap(mapData, args.apix, args.noiseBox, args.testProc, args.ecdf, args.lowPassFilter, args.method, args.window_size, locResMapData, meanMapData, varMapData, args.fdr);
+	#get LocScale input
+	if args.model_map is not None:
+		modelMap = mrcfile.open(args.model_map, mode='r');
+		modelMapData = np.copy(modelMap.data);
+	else:
+		modelMapData = None;
+		
+	if args.stepSize is not None:
+		stepSize = args.stepSize;
+	else:
+		stepSize = None;
+		
+	if args.window_size_locscale is not None:
+		windowSizeLocScale = args.window_size_locscale;
+	else:
+		windowSizeLocScale = None;
+
+	if args.mpi:
+		mpi = True;
+	else:
+		mpi = False;
+
+	if args.stepSize > args.window_size_locscale:
+		print("Step Size cannot be bigger than the window_size. Job is killed ...")
+		return;
+
+	#run the actual analysis
+	confidenceMap, locFiltMap, locScaleMap, binMap, maskedMap = FDRutil.calculateConfidenceMap(mapData, args.apix, args.noiseBox, args.testProc, args.ecdf, args.lowPassFilter, args.method, args.window_size, locResMapData, meanMapData, varMapData, args.fdr, modelMapData, stepSize, windowSizeLocScale, mpi);
 			
-		if locFiltMap is not None:
-			locFiltMapMRC = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True);
-			locFiltMap = np.float32(locFiltMap);
-			locFiltMapMRC.set_data(locFiltMap);
-			locFiltMapMRC.voxel_size = args.apix;
-			locFiltMapMRC.close();
+	if locFiltMap is not None:
+		locFiltMapMRC = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True);
+		locFiltMap = np.float32(locFiltMap);
+		locFiltMapMRC.set_data(locFiltMap);
+		locFiltMapMRC.voxel_size = args.apix;
+		locFiltMapMRC.close();
 
-		if binMap is not None:
-			binMapMRC = mrcfile.new(splitFilename[0] + '_FDR' + str(args.fdr) + '_binMap.mrc', overwrite=True);
-			binMap = np.float32(binMap);
-			binMapMRC.set_data(binMap);
-			binMapMRC.voxel_size = args.apix;
-			binMapMRC.close();
+	if binMap is not None:
+		binMapMRC = mrcfile.new(splitFilename[0] + '_FDR' + str(args.fdr) + '_binMap.mrc', overwrite=True);
+		binMap = np.float32(binMap);
+		binMapMRC.set_data(binMap);
+		binMapMRC.voxel_size = args.apix;
+		binMapMRC.close();
 
-		if maskedMap is not None:
-			maskedMapMRC = mrcfile.new(splitFilename[0] + '_FDR'+ str(args.fdr) + '_maskedMap.mrc', overwrite=True);
-			maskedMap = np.float32(maskedMap);
-			maskedMapMRC.set_data(maskedMap);
-			maskedMapMRC.voxel_size = args.apix;
-			maskedMapMRC.close();
-	
-			
-		#write the confidence Maps
-		confidenceMapMRC = mrcfile.new(splitFilename[0] + '_confidenceMap.mrc', overwrite=True);
-		confidenceMap = np.float32(confidenceMap);
-		confidenceMapMRC.set_data(confidenceMap);
-		confidenceMapMRC.voxel_size = args.apix;
-		confidenceMapMRC.close();
+	if maskedMap is not None:
+		maskedMapMRC = mrcfile.new(splitFilename[0] + '_FDR'+ str(args.fdr) + '_maskedMap.mrc', overwrite=True);
+		maskedMap = np.float32(maskedMap);
+		maskedMapMRC.set_data(maskedMap);
+		maskedMapMRC.voxel_size = args.apix;
+		maskedMapMRC.close();
+		
+	if locScaleMap is not None:		
+		locScaleMapMRC = mrcfile.new(splitFilename[0] + '_scaled.mrc', overwrite=True);
+		locScaleMap = np.float32(locScaleMap);
+		locScaleMapMRC.set_data(locScaleMap);
+		locScaleMapMRC.voxel_size = args.apix;
+		locScaleMapMRC.close();
 
-		end = time.time();
-		totalRuntime = end -start;
+	#write the confidence Maps
+	confidenceMapMRC = mrcfile.new(splitFilename[0] + '_confidenceMap.mrc', overwrite=True);
+	confidenceMap = np.float32(confidenceMap);
+	confidenceMapMRC.set_data(confidenceMap);
+	confidenceMapMRC.voxel_size = args.apix;
+	confidenceMapMRC.close();
 
-		mapUtil.printSummary(args, totalRuntime);
+	end = time.time();
+	totalRuntime = end -start;
+
+	mapUtil.printSummary(args, totalRuntime);
 
 if (__name__ == "__main__"):
 	main()

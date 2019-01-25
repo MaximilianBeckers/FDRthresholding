@@ -1,5 +1,5 @@
 import numpy as np
-from FDRutil import *
+import FDRutil
 from mapUtil import *
 import mrcfile
 import argparse, math, os, sys
@@ -37,7 +37,7 @@ def pad_or_crop_volume(vol, dim_pad=None, pad_value = None, crop_volume=False):
             
             return pad_vol
 
-def check_for_window_bleeding(mask,wn):
+def check_for_window_bleeding(mask, wn):
     masked_xyz_locs, masked_indices, mask_shape = get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, 0)
     
     zs, ys, xs = masked_xyz_locs.T
@@ -75,103 +75,65 @@ def get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn):
 
     return xyz_locs, cropp_n_mask_ind, mask.shape;
 
-def prepare_mask_and_maps_for_scaling(args):
+def prepare_mask_and_maps_for_scaling(emmap, modelmap, apix, wn_locscale, windowSize, method, locResMap, noiseBox):
 
-    #load the maps
-    if args.halfmap2 is not None:
-        if args.em_map is None:
-            print("One half map missing! Exit ...")
-            sys.exit();
-        else:
-            #load the maps
-	    filename = args.em_map;
-	    map1 = mrcfile.open(args.em_map, mode='r');
-            apix = float(map1.voxel_size.x);
-            halfMapData1 = np.copy(map1.data);
-
-            map2 = mrcfile.open(args.halfmap2, mode='r');
-            halfMapData2 = np.copy(map2.data);
-
-            emmap = (halfMapData1 + halfMapData2)*0.5;
-            halfMapData1 = 0;
-            halfMapData2 = 0;
-                                
-    else:
-            #load single map
-            filename = args.em_map;
-            map = mrcfile.open(filename, mode='r');
-            apix = float(map.voxel_size.x);
-            emmap = np.copy(map.data);
-
-    if args.apix is None:
-        output = "Pixel size was read from file as " + "%.2f" %apix + " Angstrom. If this is incorrect, run the program with the flag -p pixelSize";
-        print(output);
-        args.apix = apix;       
-
-    modmap = np.copy(mrcfile.open(args.model_map).data);
     
-    if args.mask is None:
-        mask = np.zeros(emmap.shape);
+    mask = np.zeros(emmap.shape);
         
-        if mask.shape[0] == mask.shape[1] and mask.shape[0] == mask.shape[2] and mask.shape[1] == mask.shape[2]:
-            rad = (mask.shape[0] // 2) ;
-            z,y,x = np.ogrid[-rad: rad+1, -rad: rad+1, -rad: rad+1];
-            mask = (x**2+y**2+z**2 <= rad**2).astype(np.int_).astype(np.int8);
-            mask = pad_or_crop_volume(mask,emmap.shape);
-            mask = (mask > 0.5).astype(np.int8);
-        else:
-            mask += 1;
-            mask = mask[0:mask.shape[0]-1, 0:mask.shape[1]-1, 0:mask.shape[2]-1];
-            mask = pad_or_crop_volume(emmap, (emmap.shape), pad_value=0);
-		
-    elif args.mask is not None:
-        mask = (mrcfile.open(args.mask).data > 0.5).astype(np.int8);
-                
-    if args.window_size_locscale is None:
-        wn_locscale = int(round(7 * 3 * args.apix)); # set default window size to 7 times average resolution
-    elif args.window_size_locscale is not None:
-        wn_locscale = int(math.ceil(args.window_size_locscale / 2.) * 2);
+    if mask.shape[0] == mask.shape[1] and mask.shape[0] == mask.shape[2] and mask.shape[1] == mask.shape[2]:
+        rad = (mask.shape[0] // 2) ;
+        z,y,x = np.ogrid[-rad: rad+1, -rad: rad+1, -rad: rad+1];
+        mask = (x**2+y**2+z**2 <= rad**2).astype(np.int_).astype(np.int8);
+        mask = pad_or_crop_volume(mask,emmap.shape);
+        mask = (mask > 0.5).astype(np.int8);
+    else:
+        mask += 1;
+        mask = mask[0:mask.shape[0]-1, 0:mask.shape[1]-1, 0:mask.shape[2]-1];
+        mask = pad_or_crop_volume(emmap, (emmap.shape), pad_value=0);
+           
+    if wn_locscale is None:
+        wn_locscale = int(round(7 * 3 * apix)); # set default window size to 7 times average resolution
+    elif wn_locscale is not None:
+        wn_locscale = int(math.ceil(wn_locscale / 2.) * 2);
    
-    if args.window_size is None:
-        wn = wn_locscale;
-    elif args.window_size is not None: 
-        wn = int(math.ceil(args.window_size / 2.) * 2);
-
-    if args.method is not None:
-        method = args.method;
+    wn = wn_locscale;
+    #if windowSize is None:
+    #   wn = wn_locscale;
+    #elif windowSize is not None: 
+    #    wn = int(math.ceil(windowSize / 2.) * 2);
+	
+    if method is not None:
+        method = method;
     else:
         method = 'BY';
 	
-    if args.noiseBox is not None:
-        boxCoord = args.noiseBox;
+    if noiseBox is not None:
+        boxCoord = noiseBox;
     else:
         boxCoord = 0;
 
-    if args.locResMap is not None:
-        locResMap = mrcfile.open(args.locResMap).data;
    
     window_bleed_and_pad = check_for_window_bleeding(mask, wn_locscale);
     if window_bleed_and_pad:
         pad_int_emmap = compute_padding_average(emmap, mask);
-        pad_int_modmap = compute_padding_average(modmap, mask);
+        pad_int_modmap = compute_padding_average(modelmap, mask);
         map_shape = [(emmap.shape[0] + wn_locscale), (emmap.shape[1] + wn_locscale), (emmap.shape[2] + wn_locscale)];
         emmap = pad_or_crop_volume(emmap, map_shape, pad_int_emmap);
-        modmap = pad_or_crop_volume(modmap, map_shape, pad_int_modmap);
+        modelmap = pad_or_crop_volume(modelmap, map_shape, pad_int_modmap);
         mask = pad_or_crop_volume(mask, map_shape, 0);
-        if args.locResMap is not None:
+        if locResMap is not None:
             locResMap = pad_or_crop_volume(locResMap, map_shape, 100.0);
     
     #if wished so, do local filtration                      
-    if args.locResMap is not None:
-        locResMapData = np.copy(locResMap);  
-        locResMapData[locResMapData == 0.0] = 100.0;
-        locResMapData[locResMapData >= 100.0] = 100.0;
+    if locResMap is not None:
+        locResMap[locResMap == 0.0] = 100.0;
+        locResMap[locResMap >= 100.0] = 100.0;
         locFilt = True;    
     else:
         locFilt = False;
-        locResMapData = np.ones(emmap.shape);
+        locResMap = np.ones(emmap.shape);
 
-    return emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMapData, boxCoord;
+    return emmap, modelmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord;
 
 def compute_radial_profile(volFFT, frequencyMap):
 
@@ -215,17 +177,17 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
     
     #get the background noise sample
     if boxCoord == 0:
-        noiseMap = emmap[int(center[0]-0.5*wn):(int(center[0]-0.5*wn) + wn), int(0.02*wn+wn_locscale):(int(0.02*wn+wn_locscale) + wn), (int(center[2]-0.5*wn)):(int((center[2]-0.5*wn) + wn))];
+        noiseMap = emmap[int(center[0]-0.5*wn):(int(center[0]-0.5*wn) + wn), int(0.02*wn+wn_locscale/2.0):(int(0.02*wn+wn_locscale/2.0) + wn), (int(center[2]-0.5*wn)):(int((center[2]-0.5*wn) + wn))];
     else:
-        noiseMap = emmap[int(boxCoord[0]-0.5*wn +wn_locscale):(int(boxCoord[0]-0.5*wn + wn_locscale) + wn), int(boxCoord[1]-0.5*wn+ wn_locscale):(int(boxCoord[1]-0.5*wn + wn_locscale) + wn), (int(boxCoord[2]-0.5*wn + wn_locscale)):(int((boxCoord[2]-0.5*wn + wn_locscale)+wn))];
+        noiseMap = emmap[int(boxCoord[0]-0.5*wn +wn_locscale/2.0):(int(boxCoord[0]-0.5*wn + wn_locscale/2.0) + wn), int(boxCoord[1]-0.5*wn+ wn_locscale/2.0):(int(boxCoord[1]-0.5*wn + wn_locscale/2.0) + wn), (int(boxCoord[2]-0.5*wn + wn_locscale/2.0)):(int((boxCoord[2]-0.5*wn + wn_locscale/2.0)+wn))];
 
     #prepare noise map for scaling
-    frequencyMap_noise = calculate_frequency_map(noiseMap);
+    frequencyMap_noise = FDRutil.calculate_frequency_map(noiseMap);
     noiseMapFFT = np.fft.rfftn(noiseMap);
     noise_profile, frequencies_noise = compute_radial_profile(noiseMapFFT, frequencyMap_noise);
 
     #prepare windows of particle for scaling
-    frequencyMap_mapWindow = calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
+    frequencyMap_mapWindow = FDRutil.calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
 
     for k in xrange(0, sizeMap[0] - int(wn_locscale), stepSize):
         for j in xrange(0, sizeMap[1] - int(wn_locscale), stepSize):
@@ -253,14 +215,14 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                 if locFilt == True:
                     tmpRes = round(apix/locResMap[k, j, i], 3);
                                                 
-                    mapNoise_sharpened = lowPassFilter(mapNoise_sharpened_FFT, frequencyMap_noise, tmpRes, noiseMap.shape);
-                    map_b_sharpened = lowPassFilter(map_b_sharpened_FFT, frequencyMap_mapWindow, tmpRes, emmap_wn.shape);
+                    mapNoise_sharpened = FDRutil.lowPassFilter(mapNoise_sharpened_FFT, frequencyMap_noise, tmpRes, noiseMap.shape);
+                    map_b_sharpened = FDRutil.lowPassFilter(map_b_sharpened_FFT, frequencyMap_mapWindow, tmpRes, emmap_wn.shape);
                     
                     #calculate noise statistics	  
                     map_noise_sharpened_data = mapNoise_sharpened;	   
                         
                     if ecdfBool:
-                        tmpECDF, sampleSort = estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
+                        tmpECDF, sampleSort = FDRutil.estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
                         ecdf = np.interp(map_b_sharpened[central_pix, central_pix, central_pix], sampleSort, tmpECDF, left=0.0, right=1.0); 
                     else:
                         ecdf = 0;
@@ -280,7 +242,7 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                     map_noise_sharpened_data = np.copy(mapNoise_sharpened);
                  
                     if ecdfBool:
-                        tmpECDF, sampleSort = estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
+                        tmpECDF, sampleSort = FDRutil.estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
                         ecdf = np.interp(map_b_sharpened[central_pix, central_pix, central_pix], sampleSort, tmpECDF, left=0.0, right=1.0); 
                     else:
                         ecdf = 0;
@@ -530,93 +492,84 @@ def run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, wn_locsca
 
     return map_scaled, mean_map_scaled, var_map_scaled, ecdf_map_scaled, rank;
   
-def write_out_final_volume_window_back_if_required(args, wn, window_bleed_and_pad, LocScaleVol, filename):
+def write_out_final_volume_window_back_if_required(wn, window_bleed_and_pad, Volume):
     
     if window_bleed_and_pad:
-        map_shape = [(LocScaleVol.shape[0] - wn), (LocScaleVol.shape[1] - wn), (LocScaleVol.shape[2] - wn)]
-        LocScaleVol = pad_or_crop_volume(LocScaleVol, (map_shape))
+        map_shape = [(Volume.shape[0] - wn), (Volume.shape[1] - wn), (Volume.shape[2] - wn)]
+        Volume = pad_or_crop_volume(Volume, (map_shape))
                                          
-    with mrcfile.new(filename, overwrite=True) as LocScaleVol_out:
-        LocScaleVol_out.set_data(LocScaleVol.astype(np.float32))
-        LocScaleVol_out.voxel_size = np.rec.array(( args.apix,  args.apix,  args.apix), dtype=[('x', '<f4'), ('y', '<f4'), ('z', '<f4')])
-        LocScaleVol_out.header.nxstart, LocScaleVol_out.header.nystart, LocScaleVol_out.header.nzstart = [0,0,0]
+    return Volume;
 
-    return LocScaleVol;
-
-def launch_amplitude_scaling(args):
+def launch_amplitude_scaling(em_map, model_map, apix, stepSize, wn_locscale, wn, method, locResMap, noiseBox, mpi, ecdf ):
 
     startTime = time.time();
-    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord= prepare_mask_and_maps_for_scaling(args); 
-    meanNoise, varNoise, sample = estimateNoiseFromMap(emmap, wn, boxCoord);
+    emmap, modmap, mask, wn, wn_locscale, window_bleed_and_pad, method, locFilt, locResMap, boxCoord = prepare_mask_and_maps_for_scaling(em_map, model_map, apix, wn_locscale, wn, method, locResMap, noiseBox); 
+    meanNoise, varNoise, sample = FDRutil.estimateNoiseFromMap(emmap, wn, boxCoord);
 
-    #set output filenames
-    if args.outputFilename is not None:
-        splitFilename = os.path.splitext(os.path.basename(args.outputFilename))
-    else:
-        splitFilename = os.path.splitext(os.path.basename(args.em_map))
-
-    if args.testProc is not None:
-        testProc = args.testProc
-    else:
-        testProc = 'rightSided'
-
-    if not args.mpi:
-        
-        if args.stepSize is None:
-            stepSize = 5;
-            LocScaleVol, meanVol, varVol, ecdfVol = calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, args.apix, locFilt, locResMap, boxCoord, args.ecdf, stepSize);
+    if not mpi:
+        stepSize = int(stepSize);
+        if stepSize == 1:
+	    LocScaleVol, meanVol, varVol, ecdfVol = run_window_function_including_scaling(emmap, modmap, mask, wn, wn_locscale , apix, locFilt, locResMap, boxCoord, ecdf);
+        elif stepSize <= 0:
+            print("Invalid step size parameter. It has to be greater than 0! Quit program ...");
+            return;
         else:
-            stepSize = int(args.stepSize);
-            if stepSize == 1:
-	            LocScaleVol, meanVol, varVol, ecdfVol = run_window_function_including_scaling(emmap, modmap, mask, wn, wn_locscale , args.apix, locFilt, locResMap, boxCoord, args.ecdf);
-            elif stepSize <= 0:
-                print("Invalid step size parameter. It has to be greater than 0! Quit program ...");
-                return;
-            else:
-                LocScaleVol, meanVol, varVol, ecdfVol = calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, args.apix, locFilt, locResMap, boxCoord, args.ecdf, stepSize);
+            LocScaleVol, meanVol, varVol, ecdfVol = calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, locResMap, boxCoord, ecdf, stepSize);
         
         print("Local amplitude scaling finished ...")
 
         LocScaleVol = mask*LocScaleVol;
 
-
-        if not args.ecdf:
+        if not ecdf:
             ecdfVol = 0;
+        else:
+            ecdfVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, ecdfVol);
 
-        qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
-        qVol = np.subtract(np.ones(qVol.shape), qVol);
+        LocScaleVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, LocScaleVol);
+        meanVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, meanVol);	
+        varVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, varVol);
+        
+        return LocScaleVol, meanVol, varVol, ecdfVol;
+
+        #qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
+        #qVol = np.subtract(np.ones(qVol.shape), qVol);
 
         #write the volumes		
-        LocScaleVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc');
-        qVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc');
+        #LocScaleVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc');
+        #qVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc');
 
-        endTime = time.time()
-        runTime = endTime - startTime
-       
-        pp = makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
-        pp.savefig("diag_image.pdf");
-        pp.close();
-        printSummary(args, runTime)
-
-    elif args.mpi:
-        LocScaleVol, meanVol, varVol, ecdfVol, rank = run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, wn_locscale , args.apix, locFilt, locResMap, boxCoord, args.ecdf);       
+        #endTime = time.time()
+        #runTime = endTime - startTime
+    
+    elif mpi:
+        LocScaleVol, meanVol, varVol, ecdfVol, rank = run_window_function_including_scaling_mpi(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, locResMap, boxCoord, ecdf);       
         if rank == 0:
             print("Local amplitude scaling finished ...")			
 
-            if not args.ecdf:
+            if not ecdf:
                 ecdfVol = 0;
+            else:
+                ecdfVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, ecdfVol);
 
-            qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
-            qVol = np.subtract(np.ones(qVol.shape), qVol);
+            LocScaleVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, LocScaleVol);
+            meanVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, meanVol);
+            varVol = write_out_final_volume_window_back_if_required(wn_locscale, window_bleed_and_pad, varVol);
+
+            return LocScaleVol, meanVol, varVol, ecdfVol;
+	
+
+
+            #qVol = calcQMap(LocScaleVol, meanVol, varVol, ecdfVol, 0, 0, mask, method, testProc);
+            #qVol = np.subtract(np.ones(qVol.shape), qVol);
 
             #write the volumes
-            LocScaleVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc')
-            qVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc')
+            #LocScaleVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, LocScaleVol, splitFilename[0] + '_scaled.mrc')
+            #qVol = write_out_final_volume_window_back_if_required(args, wn_locscale, window_bleed_and_pad, qVol, splitFilename[0] + '_confidenceMap.mrc')
 
-            endTime = time.time()
-            runTime = endTime - startTime;
-            pp = makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
-            pp.savefig("diag_image.pdf");
-            pp.close();
-            printSummary(args, runTime);
+            #endTime = time.time()
+            #runTime = endTime - startTime;
+            #pp = makeDiagnosticPlot(emmap, wn, wn_locscale, True, boxCoord);
+            #pp.savefig("diag_image.pdf");
+            #pp.close();
+            #printSummary(args, runTime);
 

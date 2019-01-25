@@ -120,7 +120,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 	return filteredMapData, mean, var, ECDFmap;
 
 #--------------------------------------------------------------------------------------------------
-def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
+def makeDiagnosticPlot(map, windowSize, locscale, boxCoord):
 
 	#*************************************************************
 	#*** function to make diagnostic plot of noise estimation ****
@@ -141,34 +141,36 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 	noiseLabel = np.max(visMap.flatten())
 	
 	#if coordinates are provided, do singleBox estimation
-	if boxCoord != 0:
+	if boxCoord != 0 | locscale:
 		singleBox = True;
+	else:
+		locscale = False;
 	
 	if singleBox == False:
 		visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
-			int(0.02*sizeMap[1]+padded):(int(0.02*sizeMap[1]+padded) + sizePatch[1]),
+			int(0.02*sizeMap[1]):(int(0.02*sizeMap[1]) + sizePatch[1]),
 			(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))] = noiseLabel;
 
 		visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
-			int(0.98*sizeMap[1] - padded - sizePatch[1]):(int(0.98*sizeMap[1] - padded)),
+			int(0.98*sizeMap[1] - sizePatch[1]):(int(0.98*sizeMap[1] )),
 			(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))] = noiseLabel;
 
 		visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
 			(int(center[1]-0.5*sizePatch[1])):(int((center[1]-0.5*sizePatch[1]) + sizePatch[1])), 
-			int(0.02*sizeMap[2] + padded):(int(0.02*sizeMap[2] + padded) + sizePatch[2])] = noiseLabel;
+			int(0.02*sizeMap[2]):(int(0.02*sizeMap[2]) + sizePatch[2])] = noiseLabel;
 
 		visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
 			(int(center[1]-0.5*sizePatch[1])):(int((center[1]-0.5*sizePatch[1]) + sizePatch[1])), 
-			int(0.98*sizeMap[2] - padded - sizePatch[2]):(int(0.98*sizeMap[2]) - padded)] = noiseLabel;
+			int(0.98*sizeMap[2] - sizePatch[2]):(int(0.98*sizeMap[2]))] = noiseLabel;
 
 	else:
-		if boxCoord != 0:
-			visMap[int(boxCoord[0]+padded-0.5*sizePatch[0]):(int(boxCoord[0]+padded-0.5*sizePatch[0]) + sizePatch[0]),
-				int(boxCoord[1]+padded-0.5*sizePatch[1]):int((boxCoord[1]+padded-0.5*sizePatch[1]) + sizePatch[1]),
-				(int(boxCoord[2]+padded-0.5*sizePatch[2])):(int((boxCoord[2]+padded-0.5*sizePatch[2]) + sizePatch[2]))] = noiseLabel;
+		if not locscale:
+			visMap[int(boxCoord[0]-0.5*sizePatch[0]):(int(boxCoord[0]-0.5*sizePatch[0]) + sizePatch[0]),
+				int(boxCoord[1]-0.5*sizePatch[1]):int((boxCoord[1]-0.5*sizePatch[1]) + sizePatch[1]),
+				(int(boxCoord[2]-0.5*sizePatch[2])):(int((boxCoord[2]-0.5*sizePatch[2]) + sizePatch[2]))] = noiseLabel;
 		else:	
 			visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),
-				int(0.02*sizeMap[1]+padded):(int(0.02*sizeMap[1]+padded) + sizePatch[1]),
+				int(0.02*sizeMap[1]):(int(0.02*sizeMap[1]) + sizePatch[1]),
 				(int(center[2]-0.5*sizePatch[2])):(int((center[2]-0.5*sizePatch[2]) + sizePatch[2]))] = noiseLabel;
 	
 	if boxCoord == 0:
@@ -176,9 +178,9 @@ def makeDiagnosticPlot(map, windowSize, padded, singleBox, boxCoord):
 		sliceMapXZ = visMap[:, int(sizeMap[1]/2.0), :];
 		sliceMapXY = visMap[:, :, int(sizeMap[2]/2.0)];
 	else:
-		sliceMapYZ = visMap[boxCoord[0]+padded, :, :];
-		sliceMapXZ = visMap[:, boxCoord[1]+padded, :];
-		sliceMapXY = visMap[:, :, boxCoord[2]+padded];
+		sliceMapYZ = visMap[boxCoord[0], :, :];
+		sliceMapXZ = visMap[:, boxCoord[1], :];
+		sliceMapXY = visMap[:, :, boxCoord[2]];
 
 	#make diagnostics plot	
 	plt.gray(); #make grayscale images
