@@ -100,46 +100,6 @@ python /path/to/FDRcontrol.py -em TRPV1_sharpened_-100_3.4A.map -p 1.2156
 
 The expected run time on normal desktop computer should be around 1-2 minutes for this example.
 
-
-## List of options
-
-
-### Required paramters
-
-    -em EM map    Example: -em yourEMmap.mrc
-
-    -p pixel size   Example: -p 1.06    
-
-
-### Optional parameters
-
-    -locResMap local resolution map for local filtering    Example: -locResMap yourLocalResolutions.mrc
-    
-    -mm model map for LocScale    Example: -mm yourModelMap.mrc
-    
-    -w window size for background noise estimation   Example: -w 50
-    
-    -noiseBox box coordinates for background noise estimation    Example: -noiseBox 50 150 150
-    
-    -method: method for error control, 'BH' for Benjamini-Hochberg FDR-control, 'BY' for Benjamini-Yekutieli FDR-control (default) or 'Holm' for Holm FWER-control
-    
-    -w_locscale window size for LocScale   Example: -w_locscale 15
-    
-    -stepSize step size for LocScale      Example: -stepSize 5 (default)
-    
-    -ecdf use ECDF instead of Gaussian CDF for p-value calculation      Example: -ecdf
-    
-    -o filename for output      Example: -o out.mrc
-    
-    -testProc use right-, left- or two-sided testing i.e. 'rightSided', 'leftSided'or 'twoSided'     Example: -testProc 'rightSided'
-    
-    -fdr  threshold confidence map at the desired FDR     Example: -fdr 0.01
-    
-    -mpi  MPI parallelisation for LocScale     Example: -mpi
-    
-    -lowPassFilter resolution in Angstrom to low-pass filter the map before multiple testing     Example: -lowPassFilter 5
-    
-    
     
     
 
