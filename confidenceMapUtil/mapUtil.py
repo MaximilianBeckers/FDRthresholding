@@ -144,7 +144,7 @@ def makeDiagnosticPlot(map, windowSize, locscale, boxCoord):
 	if boxCoord != 0 | locscale:
 		singleBox = True;
 	else:
-		locscale = False;
+		singleBox = False;
 	
 	if singleBox == False:
 		visMap[int(center[0]-0.5*sizePatch[0]):(int(center[0]-0.5*sizePatch[0]) + sizePatch[0]),

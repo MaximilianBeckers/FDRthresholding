@@ -1,7 +1,6 @@
 import numpy as np
 import FDRutil
 from mapUtil import *
-import mrcfile
 import argparse, math, os, sys
 from argparse import RawTextHelpFormatter
 import time
