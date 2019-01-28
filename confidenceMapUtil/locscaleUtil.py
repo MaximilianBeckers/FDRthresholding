@@ -1,6 +1,5 @@
 import numpy as np
-import FDRutil
-from mapUtil import *
+from confidenceMapUtil import FDRutil
 import argparse, math, os, sys
 from argparse import RawTextHelpFormatter
 import time
@@ -23,16 +22,16 @@ def pad_or_crop_volume(vol, dim_pad=None, pad_value = None, crop_volume=False):
             crop_volume = True
         
         if crop_volume:
-            crop_vol = vol[vol.shape[0]/2-dim_pad[0]/2:vol.shape[0]/2+dim_pad[0]/2+dim_pad[0]%2, :, :]
-            crop_vol = crop_vol[:, vol.shape[1]/2-dim_pad[1]/2:vol.shape[1]/2+dim_pad[1]/2+dim_pad[1]%2, :]
-            crop_vol = crop_vol[:, :, vol.shape[2]/2-dim_pad[2]/2:vol.shape[2]/2+dim_pad[2]/2+dim_pad[2]%2]
+            crop_vol = vol[int(vol.shape[0]/2-dim_pad[0]/2):int(vol.shape[0]/2+dim_pad[0]/2+dim_pad[0]%2), :, :]
+            crop_vol = crop_vol[:, int(vol.shape[1]/2-dim_pad[1]/2):int(vol.shape[1]/2+dim_pad[1]/2+dim_pad[1]%2), :]
+            crop_vol = crop_vol[:, :, int(vol.shape[2]/2-dim_pad[2]/2):int(vol.shape[2]/2+dim_pad[2]/2+dim_pad[2]%2)]
             
             return crop_vol
             
         else:
-            pad_vol = np.pad(vol, ((dim_pad[0]/2-vol.shape[0]/2, dim_pad[0]/2-vol.shape[0]/2+dim_pad[0]%2), (0,0), (0,0) ), 'constant', constant_values=(pad_value,))
-            pad_vol = np.pad(pad_vol, ((0,0), (dim_pad[1]/2-vol.shape[1]/2, dim_pad[1]/2-vol.shape[1]/2+dim_pad[1]%2 ), (0,0)), 'constant', constant_values=(pad_value,))
-            pad_vol = np.pad(pad_vol, ((0,0), (0,0), (dim_pad[2]/2-vol.shape[2]/2, dim_pad[2]/2-vol.shape[2]/2+dim_pad[2]%2)), 'constant', constant_values=(pad_value,))
+            pad_vol = np.pad(vol, ((int(dim_pad[0]/2-vol.shape[0]/2), int(dim_pad[0]/2-vol.shape[0]/2+dim_pad[0]%2)), (0,0), (0,0) ), 'constant', constant_values=(pad_value,))
+            pad_vol = np.pad(pad_vol, ((0,0), (int(dim_pad[1]/2-vol.shape[1]/2), int(dim_pad[1]/2-vol.shape[1]/2+dim_pad[1]%2) ), (0,0)), 'constant', constant_values=(pad_value,))
+            pad_vol = np.pad(pad_vol, ((0,0), (0,0), (int(dim_pad[2]/2-vol.shape[2]/2), int(dim_pad[2]/2-vol.shape[2]/2+dim_pad[2]%2))), 'constant', constant_values=(pad_value,))
             
             return pad_vol
 
@@ -188,11 +187,11 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
     #prepare windows of particle for scaling
     frequencyMap_mapWindow = FDRutil.calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
 
-    numSteps = len(xrange(0, sizeMap[0] - int(wn_locscale), stepSize))*len(xrange(0, sizeMap[1] - int(wn_locscale), stepSize))*len(xrange(0, sizeMap[2] - int(wn_locscale), stepSize));
+    numSteps = len(range(0, sizeMap[0] - int(wn_locscale), stepSize))*len(range(0, sizeMap[1] - int(wn_locscale), stepSize))*len(range(0, sizeMap[2] - int(wn_locscale), stepSize));
     counterSteps = 0;
-    for k in xrange(0, sizeMap[0] - int(wn_locscale), stepSize):
-        for j in xrange(0, sizeMap[1] - int(wn_locscale), stepSize):
-            for i in xrange(0, sizeMap[2] - int(wn_locscale), stepSize):
+    for k in range(0, sizeMap[0] - int(wn_locscale), stepSize):
+        for j in range(0, sizeMap[1] - int(wn_locscale), stepSize):
+            for i in range(0, sizeMap[2] - int(wn_locscale), stepSize):
                 
                 #print progress
                 counterSteps = counterSteps + 1;
@@ -267,8 +266,12 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                 sharpened_map[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = np.copy(map_b_sharpened[halfStep:halfStep+stepSize, halfStep:halfStep+stepSize, halfStep:halfStep+stepSize]);
                 sharpened_mean_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = mean;
                 sharpened_var_vals[k + halfStep :  k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = var;
-                sharpened_ecdf_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = ecdf[halfStep:halfStep+stepSize, halfStep:halfStep+stepSize, halfStep:halfStep+stepSize];
-       
+                if ecdfBool:
+                    sharpened_ecdf_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = ecdf[halfStep:halfStep+stepSize, halfStep:halfStep+stepSize, halfStep:halfStep+stepSize];
+                else:
+                    sharpened_ecdf_vals[k + halfStep: k + halfStep + stepSize, j + halfStep: j + halfStep + stepSize,
+                    i + halfStep: i + halfStep + stepSize] = 0.0;
+
     return sharpened_map, sharpened_mean_vals, sharpened_var_vals, sharpened_ecdf_vals;
 
 def get_central_scaled_pixel_vals_after_scaling(emmap, modmap, masked_xyz_locs, wn, wn_locscale, apix, locFilt, locResMap, boxCoord, ecdfBool):
@@ -518,7 +521,7 @@ def launch_amplitude_scaling(em_map, model_map, apix, stepSize, wn_locscale, wn,
     if not mpi:
         stepSize = int(stepSize);
         if stepSize == 1:
-	    LocScaleVol, meanVol, varVol, ecdfVol = run_window_function_including_scaling(emmap, modmap, mask, wn, wn_locscale , apix, locFilt, locResMap, boxCoord, ecdf);
+            LocScaleVol, meanVol, varVol, ecdfVol = run_window_function_including_scaling(emmap, modmap, mask, wn, wn_locscale , apix, locFilt, locResMap, boxCoord, ecdf);
         elif stepSize <= 0:
             print("Invalid step size parameter. It has to be greater than 0! Quit program ...");
             return;

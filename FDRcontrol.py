@@ -1,7 +1,7 @@
 #Author: Maximilian Beckers, EMBL Heidelberg, Sachse Group (2017)
 
 #import some stuff
-from confidenceMapUtil import mapUtil, locscaleUtil, FDRutil
+from confidenceMapUtil import FDRutil, confidenceMapMain
 import numpy as np
 import argparse, os, sys
 import subprocess
@@ -151,12 +151,13 @@ def main():
 	else:
 		mpi = False;
 
-	if args.stepSize > args.window_size_locscale:
-		print("Step Size cannot be bigger than the window_size. Job is killed ...")
-		return;
+	if (args.stepSize is not None) & (args.window_size_locscale is not None):
+		if args.stepSize > args.window_size_locscale:
+			print("Step Size cannot be bigger than the window_size. Job is killed ...")
+			return;
 
 	#run the actual analysis
-	confidenceMap, locFiltMap, locScaleMap, binMap, maskedMap = FDRutil.calculateConfidenceMap(mapData, args.apix, args.noiseBox, args.testProc, args.ecdf, args.lowPassFilter, args.method, args.window_size, locResMapData, meanMapData, varMapData, args.fdr, modelMapData, stepSize, windowSizeLocScale, mpi);
+	confidenceMap, locFiltMap, locScaleMap, binMap, maskedMap = confidenceMapMain.calculateConfidenceMap(mapData, args.apix, args.noiseBox, args.testProc, args.ecdf, args.lowPassFilter, args.method, args.window_size, locResMapData, meanMapData, varMapData, args.fdr, modelMapData, stepSize, windowSizeLocScale, mpi);
 			
 	if locFiltMap is not None:
 		locFiltMapMRC = mrcfile.new(splitFilename[0] + '_locFilt.mrc', overwrite=True);
@@ -196,7 +197,7 @@ def main():
 	end = time.time();
 	totalRuntime = end -start;
 
-	mapUtil.printSummary(args, totalRuntime);
+	FDRutil.printSummary(args, totalRuntime);
 
 if (__name__ == "__main__"):
 	main()

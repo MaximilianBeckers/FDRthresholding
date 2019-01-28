@@ -1,4 +1,4 @@
-from FDRutil import *
+from confidenceMapUtil import FDRutil
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
@@ -57,14 +57,14 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 
 	#get initial noise statistics
 	initMapData = np.copy(map);
-	initMean, initVar, _ = estimateNoiseFromMap(initMapData, windowSize, boxCoord);
+	initMean, initVar, _ = FDRutil.estimateNoiseFromMap(initMapData, windowSize, boxCoord);
 	noiseMapData = np.random.normal(initMean, math.sqrt(initVar), (100, 100, 100));
 
 	#do FFT of the respective map
 	mapFFT = np.fft.rfftn(map);
 
 	#get frequency map
-	frequencyMap = calculate_frequency_map(map);
+	frequencyMap = FDRutil.calculate_frequency_map(map);
 
 	# Initial call to print 0% progress
 	#printProgressBar(counter, numRes, prefix = 'Progress:', suffix = 'Complete', bar_length = 50)
@@ -89,7 +89,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 			xInd, yInd, zInd = indices[0], indices[1], indices[2];
 			
 			#do local filtration
-			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
+			tmpFilteredMapData = FDRutil.lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
 
 			#set the filtered voxels
 			filteredMapData[xInd, yInd, zInd] = tmpFilteredMapData[xInd, yInd, zInd];
@@ -97,7 +97,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 		else:
 			xInd, yInd, zInd = indices[0], indices[1], indices[2];
 			#do local filtration
-			tmpFilteredMapData = lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
+			tmpFilteredMapData = FDRutil.lowPassFilter(mapFFT, frequencyMap, tmpRes, map.shape);
 			#set the filtered voxels
 			filteredMapData[xInd, yInd, zInd] = tmpFilteredMapData[xInd, yInd, zInd];
 			if localVariance == True:
@@ -105,13 +105,13 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 
 				if ECDF == 1:
 					#if ecdf shall be used, use if to p-vals
-					tmpECDF, sampleSort = estimateECDFFromMap(tmpFilteredMapData, windowSize, boxCoord);
+					tmpECDF, sampleSort = FDRutil.estimateECDFFromMap(tmpFilteredMapData, windowSize, boxCoord);
 					vecECDF = np.interp(tmpFilteredMapData[xInd, yInd, zInd], sampleSort, tmpECDF, left=0.0, right=1.0);
 					ECDFmap[xInd, yInd, zInd] = vecECDF; 
 				else:
 					ECDFmap = 0;
 
-				tmpMean, tmpVar, _ = estimateNoiseFromMap(tmpFilteredMapData, windowSize, boxCoord);
+				tmpMean, tmpVar, _ = FDRutil.estimateNoiseFromMap(tmpFilteredMapData, windowSize, boxCoord);
 				mean[xInd, yInd, zInd] = tmpMean;
 				var[xInd, yInd, zInd] = tmpVar;
 
@@ -238,6 +238,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
         sys.stdout.write('\n');
     sys.stdout.flush();
 
+    return;
 #---------------------------------------------------------------------------------
 def makeCircularMask(map, sphereRadius):
 
