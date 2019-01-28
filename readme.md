@@ -10,12 +10,12 @@ Additional post-processing like local filtering or local amplitude scaling (LocS
 
 ### Prerequisites
 
-The software is written in Python and itself dependent on NumPy libraries. 
+The software is written in Python2.7 and itself dependent on NumPy libraries. 
 
 
 ### Installing
 
-The folder just has to be copied to your computer and can be run with a NumPy capable python installation.
+The folder just has to be copied to your computer and can be run with a NumPy capable Python2.7 installation.
 
 
 ## How to use
