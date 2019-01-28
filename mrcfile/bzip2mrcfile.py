@@ -43,10 +43,10 @@ class Bzip2MrcFile(MrcFile):
             open(name, mode='w').close()
         self._iostream = bz2.BZ2File(name, mode='r')
     
-    def _read(self):
+    def _read(self, header_only=False):
         """Override _read() to ensure bzip2 file is in read mode."""
         self._ensure_readable_stream()
-        super(Bzip2MrcFile, self)._read()
+        super(Bzip2MrcFile, self)._read(header_only)
     
     def _ensure_readable_stream(self):
         """Make sure _iostream is a bzip2 stream that can be read."""
@@ -57,6 +57,16 @@ class Bzip2MrcFile(MrcFile):
         """Override _get_file_size() to avoid seeking from end."""
         self._ensure_readable_stream()
         return super(Bzip2MrcFile, self)._get_file_size()
+
+    def _read_bytearray_from_stream(self, number_of_bytes):
+        """Override because BZ2File in Python 2 does not support :meth:`~io.BufferedIOBase.readinto`."""
+        if hasattr(self._iostream, "readinto"):
+            # Python 3 - BZ2File supports ``readinto()`` so we just use the normal implementation
+            return super(Bzip2MrcFile, self)._read_bytearray_from_stream(number_of_bytes)
+        else:
+            # Python 2 - need to read as bytes then copy to a bytearray
+            result_bytes = self._iostream.read(number_of_bytes)
+            return bytearray(result_bytes), len(result_bytes)
     
     def flush(self):
         """Override :meth:`~mrcfile.mrcinterpreter.MrcInterpreter.flush` since

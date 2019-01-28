@@ -188,10 +188,20 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
     #prepare windows of particle for scaling
     frequencyMap_mapWindow = FDRutil.calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
 
+    numSteps = len(xrange(0, sizeMap[0] - int(wn_locscale), stepSize))*len(xrange(0, sizeMap[1] - int(wn_locscale), stepSize))*len(xrange(0, sizeMap[2] - int(wn_locscale), stepSize));
+    counterSteps = 0;
     for k in xrange(0, sizeMap[0] - int(wn_locscale), stepSize):
         for j in xrange(0, sizeMap[1] - int(wn_locscale), stepSize):
             for i in xrange(0, sizeMap[2] - int(wn_locscale), stepSize):
                 
+                #print progress
+                counterSteps = counterSteps + 1;
+                progress = counterSteps/float(numSteps);                
+                if counterSteps%(int(numSteps/20.0)) == 0:
+                        output = "%.1f" %(progress*100) + "% finished ..." ;
+                        print(output);                   
+
+                #crop windows
                 emmap_wn = emmap[k: k + wn_locscale, j: j + wn_locscale, i: i + wn_locscale];
                 modmap_wn = modmap[k: k + wn_locscale, j: j + wn_locscale, i: i + wn_locscale];
                     
@@ -242,7 +252,7 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                  
                     if ecdfBool:
                         tmpECDF, sampleSort = FDRutil.estimateECDFFromMap(map_noise_sharpened_data, -1, -1);
-                        ecdf = np.interp(map_b_sharpened[central_pix, central_pix, central_pix], sampleSort, tmpECDF, left=0.0, right=1.0); 
+                        ecdf = np.interp(map_b_sharpened, sampleSort, tmpECDF, left=0.0, right=1.0); 
                     else:
                         ecdf = 0;
                                         
@@ -257,7 +267,7 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                 sharpened_map[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = np.copy(map_b_sharpened[halfStep:halfStep+stepSize, halfStep:halfStep+stepSize, halfStep:halfStep+stepSize]);
                 sharpened_mean_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = mean;
                 sharpened_var_vals[k + halfStep :  k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = var;
-                sharpened_ecdf_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = ecdf;
+                sharpened_ecdf_vals[k + halfStep : k + halfStep + stepSize, j + halfStep : j + halfStep + stepSize, i + halfStep : i + halfStep + stepSize] = ecdf[halfStep:halfStep+stepSize, halfStep:halfStep+stepSize, halfStep:halfStep+stepSize];
        
     return sharpened_map, sharpened_mean_vals, sharpened_var_vals, sharpened_ecdf_vals;
 

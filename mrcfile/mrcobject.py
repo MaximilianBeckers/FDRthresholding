@@ -82,7 +82,7 @@ class MrcObject(object):
     
     Attributes and methods relevant to subclasses:
     
-    * :attr:`_read_only`
+    * ``_read_only``
     * :meth:`_check_writeable`
     * :meth:`_create_default_attributes`
     * :meth:`_close_data`
@@ -95,8 +95,8 @@ class MrcObject(object):
         
         This initialiser deliberately avoids creating any arrays and simply
         sets the header, extended header and data attributes to :data:`None`.
-        This allows subclasses to call :meth:`super().__init__` at the start of
-        their initialisers and then set the attributes themselves, probably by
+        This allows subclasses to call :meth:`__init__` at the start of their
+        initialisers and then set the attributes themselves, probably by
         reading from a file, or by calling :meth:`_create_default_attributes`
         for a new empty object.
         
@@ -117,7 +117,7 @@ class MrcObject(object):
         """Check that this MRC object is writeable.
         
         Raises:
-            :class:`~exceptions.ValueError`: If this object is read-only.
+            :exc:`ValueError`: If this object is read-only.
         """
         if self._read_only:
             raise ValueError('MRC object is read-only')
@@ -160,8 +160,8 @@ class MrcObject(object):
         header.maps = 3
         
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        header.label[0] = '{0:40s}{1:>40s}'.format('Created by mrcfile.py',
-                                                   time)
+        header.label[0] = '{0:40s}{1:>39s} '.format('Created by mrcfile.py',
+                                                    time)
         header.nlabl = 1
         
         self.reset_header_stats()
@@ -340,8 +340,7 @@ class MrcObject(object):
         This method changes the space group number (``header.ispg``) to zero.
         
         Raises:
-            :class:`~exceptions.ValueError`: If the data array is not
-                three-dimensional.
+            :exc:`ValueError`: If the data array is not three-dimensional.
         """
         self._check_writeable()
         if self.data.ndim != 3:
@@ -356,8 +355,7 @@ class MrcObject(object):
         this method sets it to one. Otherwise the space group is not changed.
         
         Raises:
-            :class:`~exceptions.ValueError`: If the data array is not
-                three-dimensional.
+            :exc:`ValueError`: If the data array is not three-dimensional.
         """
         self._check_writeable()
         if self.data.ndim != 3:
@@ -534,8 +532,7 @@ class MrcObject(object):
         try:
             utils.byte_order_from_machine_stamp(self.header.machst)
         except ValueError:
-            pretty_bytes = " ".join("0x{:02x}".format(byte)
-                                    for byte in self.header.machst)
+            pretty_bytes = utils.pretty_machine_stamp(self.header.machst)
             log("Invalid machine stamp: " + pretty_bytes)
             valid = False
         
@@ -562,7 +559,7 @@ class MrcObject(object):
         axes = set()
         for field in ['mapc', 'mapr', 'maps']:
             axes.add(int(self.header[field]))
-        if axes != set([1, 2, 3]):
+        if axes != {1, 2, 3}:
             log("Invalid axis mapping: found {0}, should be [1, 2, 3]"
                 .format(sorted(list(axes))))
             valid = False
@@ -599,7 +596,7 @@ class MrcObject(object):
             valid = False
         
         # Check extended header type is set to a known value
-        valid_exttypes = ['CCP4', 'MRCO', 'SERI', 'AGAR', 'FEI1']
+        valid_exttypes = [b'CCP4', b'MRCO', b'SERI', b'AGAR', b'FEI1']
         if self.header.nsymbt > 0 and self.header.exttyp not in valid_exttypes:
             log("Extended header type is undefined or unrecognised: exttyp = "
                 "'{0}'".format(self.header.exttyp.item().decode('ascii')))

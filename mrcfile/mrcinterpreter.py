@@ -37,13 +37,13 @@ class MrcInterpreter(MrcObject):
     a superclass to provide common stream-handling functionality. This can be
     used by subclasses which will handle opening and closing the stream.
     
-    This class implements the :meth:`__enter__` and :meth:`__exit__` special
-    methods which allow it to be used by the Python context manager in a
-    :keyword:`with` block. This ensures that :meth:`close` is called after the
-    object is finished with.
+    This class implements the :meth:`~object.__enter__` and
+    :meth:`~object.__exit__` special methods which allow it to be used by the
+    Python context manager in a :keyword:`with` block. This ensures that
+    :meth:`close` is called after the object is finished with.
         
-    When reading the I/O stream, a :class:`~exceptions.ValueError` is raised if
-    the data is invalid in one of the following ways:
+    When reading the I/O stream, a :exc:`ValueError` is raised if the data is
+    invalid in one of the following ways:
     
     #. The header's ``map`` field is not set correctly to confirm the file
        type.
@@ -51,6 +51,7 @@ class MrcInterpreter(MrcObject):
        determined.
     #. The mode number is not recognised. Currently accepted modes are 0, 1, 2,
        4 and 6.
+    #. The file is not large enough for the specified extended header size.
     #. The data block is not large enough for the specified data type and
        dimensions.
     
@@ -58,7 +59,7 @@ class MrcInterpreter(MrcObject):
     problematic files. If ``permissive`` is set to :data:`True` and any of the
     validity checks fails, a :mod:`warning <warnings>` is issued instead of an
     exception, and file interpretation continues. If the mode number is invalid
-    or the data block is too small, the :attr:`data` attribute will be set to
+    or the data block is too small, the :attr:`.data` attribute will be set to
     :data:`None`. In this case, it might be possible to inspect and correct the
     header, and then call :meth:`_read` again to read the data correctly. See
     the :doc:`usage guide <../usage_guide>` for more details.
@@ -72,31 +73,44 @@ class MrcInterpreter(MrcObject):
     
     * :meth:`_read`
     * :meth:`_read_data`
+    * :meth:`_read_bytearray_from_stream`
     
     """
     
-    def __init__(self, iostream=None, permissive=False, **kwargs):
+    def __init__(self, iostream=None, permissive=False, header_only=False,
+                 **kwargs):
         """Initialise a new MrcInterpreter object.
         
         This initialiser reads the stream if it is given. In general,
-        subclasses should call :meth:`super().__init__` without giving an
-        ``iostream`` argument, then set the :attr:`_iostream` attribute
-        themselves and call :meth:`_read` when ready.
+        subclasses should call :meth:`__init__` without giving an ``iostream``
+        argument, then set the ``_iostream`` attribute themselves and call
+        :meth:`_read` when ready.
         
         To use the MrcInterpreter class directly, pass a stream when creating
         the object (or for a write-only stream, create an MrcInterpreter with
-        no stream, call :meth:`_create_default_attributes` and set the
-        :attr:`_iostream` attribute directly).
+        no stream, call :meth:`._create_default_attributes` and set the
+        ``_iostream`` attribute directly).
         
         Args:
             iostream: The I/O stream to use to read and write MRC data. The
                 default is :data:`None`.
             permissive: Read the stream in permissive mode. The default is
                 :data:`False`.
+            header_only: Only read the header (and extended header) from the
+                file. The default is :data:`False`.
         
         Raises:
-            :class:`~exceptions.ValueError`: If ``iostream`` is given and the
-                data it contains cannot be interpreted as a valid MRC file.
+            :exc:`ValueError`: If ``iostream`` is given, the data it contains
+                cannot be interpreted as a valid MRC file and ``permissive``
+                is :data:`False`.
+
+        Warns:
+            RuntimeWarning: If ``iostream`` is given, the data it contains
+                cannot be interpreted as a valid MRC file and ``permissive``
+                is :data:`True`.
+            RuntimeWarning: If the header's ``exttyp`` field is set to a known
+                value but the extended header's size is not a multiple of the
+                number of bytes in the corresponding dtype.
         """
         super(MrcInterpreter, self).__init__(**kwargs)
         
@@ -105,7 +119,7 @@ class MrcInterpreter(MrcObject):
         
         # If iostream is given, initialise by reading it
         if self._iostream is not None:
-            self._read()
+            self._read(header_only)
     
     def __enter__(self):
         """Called by the context manager at the start of a :keyword:`with`
@@ -135,20 +149,30 @@ class MrcInterpreter(MrcObject):
         except Exception:
             pass
     
-    def _read(self):
+    def _read(self, header_only=False):
         """Read the header, extended header and data from the I/O stream.
         
         Before calling this method, the stream should be open and positioned at
         the start of the header. This method will advance the stream to the end
-        of the data block.
+        of the data block (or the end of the extended header if ``header_only``
+        is :data:`True`.
+
+        Args:
+            header_only: Only read the header and extended header from the
+                stream. The default is :data:`False`.
         
         Raises:
-            :class:`~exceptions.ValueError`: If the file is not a valid MRC
-                file.
+            :exc:`ValueError`: If the data in the stream cannot be interpreted
+                 as a valid MRC file and ``permissive`` is :data:`False`.
+
+        Warns:
+            RuntimeWarning:  If the data in the stream cannot be interpreted
+                 as a valid MRC file and ``permissive`` is :data:`True`.
         """
         self._read_header()
         self._read_extended_header()
-        self._read_data()
+        if not header_only:
+            self._read_data()
 
     def _read_header(self):
         """Read the MRC header from the I/O stream.
@@ -157,18 +181,21 @@ class MrcInterpreter(MrcObject):
         stream will be advanced by 1024 bytes.
         
         Raises:
-            :class:`~exceptions.ValueError`: If the file is not a valid MRC
-                file.
+            :exc:`ValueError`: If the data in the stream cannot be interpreted
+                 as a valid MRC file and ``permissive`` is :data:`False`.
+
+        Warns:
+            RuntimeWarning:  If the data in the stream cannot be interpreted
+                 as a valid MRC file and ``permissive`` is :data:`True`.
         """
         # Read 1024 bytes from the stream
-        header_str = self._iostream.read(HEADER_DTYPE.itemsize)
-        
-        if len(header_str) < HEADER_DTYPE.itemsize:
+        header_arr, bytes_read = self._read_bytearray_from_stream(HEADER_DTYPE.itemsize)
+        if bytes_read < HEADER_DTYPE.itemsize:
             raise ValueError("Couldn't read enough bytes for MRC header")
         
         # Use a recarray to allow access to fields as attributes
         # (e.g. header.mode instead of header['mode'])
-        header = np.rec.fromstring(header_str, dtype=HEADER_DTYPE, shape=())
+        header = np.frombuffer(header_arr, dtype=HEADER_DTYPE).reshape(()).view(np.recarray)
         
         # Make header writeable, because fromstring() creates a read-only array
         header.flags.writeable = True
@@ -194,6 +221,27 @@ class MrcInterpreter(MrcObject):
         # Create a new dtype with the correct byte order and update the header
         header.dtype = header.dtype.newbyteorder(byte_order)
         
+        # Check mode is valid; if not, try the opposite byte order
+        # (Some MRC files have been seen 'in the wild' that are correct except
+        # that the machine stamp indicates the wrong byte order.)
+        if self._permissive:
+            try:
+                utils.dtype_from_mode(header.mode)
+            except ValueError:
+                try:
+                    utils.dtype_from_mode(header.mode.newbyteorder())
+                    # If we get here the new byte order is probably correct
+                    # Use it and issue a warning
+                    header.dtype = header.dtype.newbyteorder()
+                    pretty_machst = utils.pretty_machine_stamp(header.machst)
+                    msg = "Machine stamp '{0}' does not match the apparent byte order '{1}'"
+                    warnings.warn(msg.format(pretty_machst, header.mode.dtype.byteorder),
+                                  RuntimeWarning)
+                except ValueError:
+                    # Neither byte order gives a valid mode. Ignore for now,
+                    # and a warning will be issued by _read_data()
+                    pass
+        
         header.flags.writeable = not self._read_only
         self._header = header
     
@@ -206,15 +254,42 @@ class MrcInterpreter(MrcObject):
         If the extended header is recognised as FEI microscope metadata (by
         'FEI1' in the header's ``exttyp`` field), its dtype is set
         appropriately. Otherwise, the dtype is set as void (``'V1'``).
+
+        Raises:
+            :exc:`ValueError`: If the stream is not long enough to contain the
+                extended header indicated by the header and ``permissive``
+                is :data:`False`.
+
+        Warns:
+            RuntimeWarning: If the header's ``exttyp`` field is set to 'FEI1'
+                but the extended header's size is not a multiple of the number
+                of bytes in the FEI metadata dtype.
+            RuntimeWarning: If the stream is not long enough to contain the
+                extended header indicated by the header and ``permissive``
+                is :data:`True`.
         """
-        ext_header_str = self._iostream.read(int(self.header.nsymbt))
-        
-        if self.header['exttyp'] == b'FEI1':
-            dtype = FEI_EXTENDED_HEADER_DTYPE
-        else:
-            dtype = 'V1'
-            
-        self._extended_header = np.frombuffer(ext_header_str, dtype=dtype)
+        ext_header_arr, bytes_read = self._read_bytearray_from_stream(int(self.header.nsymbt))
+
+        if bytes_read < self.header.nsymbt:
+            msg = ("Expected {0} bytes in extended header but could only read {1}"
+                   .format(self.header.nsymbt, bytes_read))
+            if self._permissive:
+                warnings.warn(msg, RuntimeWarning)
+                self._extended_header = None
+                return
+            else:
+                raise ValueError(msg)
+
+        self._extended_header = np.frombuffer(ext_header_arr, dtype='V1')
+
+        try:
+            if self.header.exttyp == b'FEI1':
+                self._extended_header.dtype = FEI_EXTENDED_HEADER_DTYPE
+        except ValueError:
+            warnings.warn("File has exttyp '{}' but the extended header "
+                          "cannot be interpreted as that type"
+                          .format(self.header.exttyp), RuntimeWarning)
+
         self._extended_header.flags.writeable = not self._read_only
     
     def _read_data(self):
@@ -222,6 +297,16 @@ class MrcInterpreter(MrcObject):
         
         This method uses information from the header to set the data array's
         shape and dtype.
+
+        Raises:
+            :exc:`ValueError`: If the stream is not long enough to contain the
+                data indicated by the header and ``permissive`` is
+                :data:`False`.
+
+        Warns:
+            RuntimeWarning: If the stream is not long enough to contain the
+                data indicated by the header and ``permissive`` is
+                :data:`True`.
         """
         try:
             dtype = utils.data_dtype_from_header(self.header)
@@ -239,12 +324,12 @@ class MrcInterpreter(MrcObject):
         nbytes = dtype.itemsize
         for axis_length in shape:
             nbytes *= axis_length
+
+        data_arr, bytes_read = self._read_bytearray_from_stream(nbytes)
         
-        data_bytes = self._iostream.read(nbytes)
-        
-        if len(data_bytes) < nbytes:
+        if bytes_read < nbytes:
             msg = ("Expected {0} bytes in data block but could only read {1}"
-                   .format(nbytes, len(data_bytes)))
+                   .format(nbytes, bytes_read))
             if self._permissive:
                 warnings.warn(msg, RuntimeWarning)
                 self._data = None
@@ -252,8 +337,25 @@ class MrcInterpreter(MrcObject):
             else:
                 raise ValueError(msg)
         
-        self._data = np.frombuffer(data_bytes, dtype=dtype).reshape(shape)
+        self._data = np.frombuffer(data_arr, dtype=dtype).reshape(shape)
         self._data.flags.writeable = not self._read_only
+
+    def _read_bytearray_from_stream(self, number_of_bytes):
+        """Read a :class:`bytearray` from the stream.
+
+        This default implementation relies on the stream implementing the
+        :meth:`~io.BufferedIOBase.readinto` method to avoid copying the new
+        array while creating the mutable :class:`bytearray`. Subclasses
+        should override this if their stream does not support
+        :meth:`~io.BufferedIOBase.readinto`.
+
+        Returns:
+            A 2-tuple of the :class:`bytearray` and the number of bytes that
+            were read from the stream.
+        """
+        result_array = bytearray(number_of_bytes)
+        bytes_read = self._iostream.readinto(result_array)
+        return result_array, bytes_read
     
     def close(self):
         """Flush to the stream and clear the header and data attributes."""

@@ -44,13 +44,13 @@ class MrcFile(MrcInterpreter):
         
         In mode ``r`` or ``r+``, the named file is opened from disk and read.
         In mode ``w+`` a new empty file is created and will be written to disk
-        at the end of the :keyword:`with` block (or when :meth:`flush` or
-        :meth:`close` is called).
+        at the end of the :keyword:`with` block (or when
+        :meth:`~.MrcInterpreter.flush` or :meth:`close` is called).
     
     """
     
     def __init__(self, name, mode='r', overwrite=False, permissive=False,
-                 **kwargs):
+                 header_only=False, **kwargs):
         """Initialise a new :class:`MrcFile` object.
         
         The given file name is opened in the given mode. For mode ``r`` or
@@ -70,19 +70,28 @@ class MrcFile(MrcInterpreter):
             permissive: Read the file in permissive mode. (See
                 :class:`mrcfile.mrcinterpreter.MrcInterpreter` for details.)
                 The default is :data:`False`.
+            header_only: Only read the header (and extended header) from the
+                file. The default is :data:`False`.
         
         Raises:
-            :class:`~exceptions.ValueError`: If the mode is not one of ``r``,
-                ``r+`` or ``w+``, the file is not a valid MRC file, or if the
-                mode is ``w+``, the file already exists and overwrite is
-                :data:`False`.
-            :class:`~exceptions.OSError`: If the mode is ``r`` or ``r+`` and
-                the file does not exist.
+            :exc:`ValueError`: If the mode is not one of ``r``, ``r+`` or
+                ``w+``.
+            :exc:`ValueError`: If the file is not a valid MRC file and
+                ``permissive`` is :data:`False`.
+            :exc:`ValueError`: If the mode is ``w+``, the file already exists
+                and overwrite is :data:`False`.
+            :exc:`OSError`: If the mode is ``r`` or ``r+`` and the file does
+                not exist.
         
         Warns:
-            RuntimeWarning: The file appears to be a valid MRC file but the
+            RuntimeWarning: If the file appears to be a valid MRC file but the
                 data block is longer than expected from the dimensions in the
                 header.
+            RuntimeWarning: If the file is not a valid MRC file and
+                ``permissive`` is :data:`True`.
+            RuntimeWarning: If the header's ``exttyp`` field is set to a known
+                value but the extended header's size is not a multiple of the
+                number of bytes in the corresponding dtype.
         """
         super(MrcFile, self).__init__(permissive=permissive, **kwargs)
         
@@ -102,7 +111,7 @@ class MrcFile(MrcInterpreter):
             if 'w' in mode:
                 self._create_default_attributes()
             else:
-                self._read()
+                self._read(header_only)
         except Exception:
             self._close_file()
             raise
@@ -115,10 +124,10 @@ class MrcFile(MrcInterpreter):
         """Open a file object to use as the I/O stream."""
         self._iostream = open(name, self._mode + 'b')
     
-    def _read(self):
+    def _read(self, header_only=False):
         """Override _read() to move back to start of file first."""
         self._iostream.seek(0)
-        super(MrcFile, self)._read()
+        super(MrcFile, self)._read(header_only)
         
         # Check if the file is the expected size.
         if self.data is not None:
@@ -143,8 +152,8 @@ class MrcFile(MrcInterpreter):
     def close(self):
         """Flush any changes to disk and close the file.
         
-        This override calls :meth:`super().close` to ensure the stream is
-        flushed and closed, then closes the file object.
+        This override calls :meth:`.MrcInterpreter.close` to ensure the stream
+        is flushed and closed, then closes the file object.
         """
         super(MrcFile, self).close()
         self._close_file()

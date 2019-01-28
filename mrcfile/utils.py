@@ -18,6 +18,8 @@ Functions
   MRC mode number.
 * :func:`dtype_from_mode`: Convert an MRC mode number to a :class:`numpy dtype
   <numpy.dtype>`.
+* :func:`pretty_machine_stamp`: Get a nicely-formatted string from a machine
+  stamp.
 * :func:`machine_stamp_from_byte_order`: Get a machine stamp from a byte order
   indicator.
 * :func:`byte_orders_equal`: Compare two byte order indicators for equal
@@ -56,8 +58,8 @@ def data_dtype_from_header(header):
         corresponding to the given header.
     
     Raises:
-        :class:`~exceptions.ValueError`: If there is no corresponding dtype for
-            the given mode.
+        :exc:`ValueError`: If there is no corresponding dtype for the given
+            mode.
     """
     mode = header.mode
     return dtype_from_mode(mode).newbyteorder(mode.dtype.byteorder)
@@ -114,8 +116,8 @@ def mode_from_dtype(dtype):
         The MRC mode number.
     
     Raises:
-        :class:`~exceptions.ValueError`: If there is no corresponding MRC mode
-            for the given dtype.
+        :exc:`ValueError`: If there is no corresponding MRC mode for the given
+            dtype.
     """
     kind_and_size = dtype.kind + str(dtype.itemsize)
     if kind_and_size in _dtype_to_mode:
@@ -157,14 +159,19 @@ def dtype_from_mode(mode):
         given mode.
     
     Raises:
-        :class:`~exceptions.ValueError`: If there is no corresponding dtype for
-            the given mode.
+        :exc:`ValueError`: If there is no corresponding dtype for the given
+            mode.
     """
     mode = int(mode)
     if mode in _mode_to_dtype:
         return np.dtype(_mode_to_dtype[mode])
     else:
         raise ValueError("Unrecognised mode '{0}'".format(mode))
+
+
+def pretty_machine_stamp(machst):
+    """Return a human-readable hex string for a machine stamp."""
+    return " ".join("0x{:02x}".format(byte) for byte in machst)
 
 
 def byte_order_from_machine_stamp(machst):
@@ -179,14 +186,14 @@ def byte_order_from_machine_stamp(machst):
         it represents big-endian.
     
     Raises:
-        :class:`~exceptions.ValueError`: If the machine stamp is invalid.
+        :exc:`ValueError`: If the machine stamp is invalid.
     """
     if machst[0] == 0x44 and machst[1] in (0x44, 0x41):
         return '<'
     elif (machst[0] == 0x11 and machst[1] == 0x11):
         return '>'
     else:
-        pretty_bytes = " ".join("0x{:02x}".format(byte) for byte in machst)
+        pretty_bytes = pretty_machine_stamp(machst)
         raise ValueError("Unrecognised machine stamp: " + pretty_bytes)
 
 
@@ -208,8 +215,7 @@ def machine_stamp_from_byte_order(byte_order='='):
         byte order indicator is ``=``, the native byte order is used.
     
     Raises:
-        :class:`~exceptions.ValueError`: If the byte order indicator is
-            unrecognised.
+        :exc:`ValueError`: If the byte order indicator is unrecognised.
     """
     # If byte order is '=', replace it with the system-native order
     byte_order = normalise_byte_order(byte_order)
@@ -228,8 +234,7 @@ def byte_orders_equal(a, b):
         endianness.
     
     Raises:
-        :class:`~exceptions.ValueError`: If the byte order indicator is not
-            recognised.
+        :exc:`ValueError`: If the byte order indicator is not recognised.
     """
     return normalise_byte_order(a) == normalise_byte_order(b)
 
@@ -246,8 +251,8 @@ def normalise_byte_order(byte_order):
         it will be converted to ``>``.
     
     Raises:
-        :class:`~exceptions.ValueError`: If ``byte_order`` is not one of ``=``,
-            ``<`` or ``>``.
+        :exc:`ValueError`: If ``byte_order`` is not one of ``=``, ``<`` or
+            ``>``.
     """
     if byte_order not in ('<', '>', '='):
         raise ValueError("Unrecognised byte order indicator '{0}'"

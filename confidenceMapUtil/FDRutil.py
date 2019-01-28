@@ -415,12 +415,12 @@ def checkNormality(map, windowSize, boxCoord):
 	#get maximum distances between ECDF and CDF
 	ECDFvals, sampleSort = estimateECDFFromMap(map, windowSize, boxCoord);
 	KSstat, Dn, Dn_tail, n = KolmogorowSmirnow(ECDFvals, sampleSort);
-	output = "Maximum Distance Dn between ECDF and CDF: Dn=" + repr(Dn) + ", in Tail: " + repr(Dn_tail) + ". Sample size used: " + repr(n);
+	output = "Maximum Distance Dn between ECDF and CDF: Dn=" + " %.4f" %Dn + ", in Tail:" + " %.4f" %Dn_tail + ". Sample size used: " + repr(n);
 	print(output);
 
 	#do Anderson-Darling test for normality
 	AnDarl, pVal, n = AndersonDarling(sampleSort);
-	output = "Anderson-Darling test summary: " + repr(AnDarl) + ". p-Value: " + repr(pVal) + ". Sample size used: " + repr(n);
+	output = "Anderson-Darling test summary: " + repr(AnDarl) + ". p-Value: " + "%.4f" %pVal + ". Sample size used: " + repr(n);
 	if pVal != -1.0:
 		print(output);
 	else:
