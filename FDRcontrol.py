@@ -102,11 +102,11 @@ def main():
 		mapData = np.copy(map.data);
 			
 	if args.apix is not None:
-		print('Pixel size set to {:.3f} Angstroem. (Pixel size encoded in map: {:.3f})'.format(args.apix, apix))
-		apix = args.apix
+		print('Pixel size set to {:.3f} Angstroem. (Pixel size encoded in map: {:.3f})'.format(args.apix, apix));
+		apix = args.apix;
 	else:
 		print('Pixel size was read as {:.3f} Angstroem. If this is incorrect, please specify with -p pixelSize'.format(apix));
-
+		args.apix = apix;
 			
 	#set output filename
 	if args.outputFilename is not None:
