@@ -14,10 +14,6 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	#******* this function calc. confMaps ********
 	#*********************************************
 
-	#print pixelSize and give feedback to the user
-	output = "Pixel size was read as " + "%.2f" %apix + " Angstrom. If this is incorrect, please specify with -p pixelSize";
-	print(output);
-
 	# get boxCoordinates
 	if noiseBox is None:
 		boxCoord = 0;

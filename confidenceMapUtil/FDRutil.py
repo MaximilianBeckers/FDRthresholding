@@ -597,10 +597,6 @@ def printSummary(args, time):
 			output = "Output confidence Map: " + splitFilename[0] + "_confidenceMap" + ".mrc";
 			print(output);
 
-	#print pixel size
-	output = "Pixel size: " + "%.2f" %args.apix;
-	print(output);
-
 	#print method used for FDR-control
 	if args.method is None:
 		output = "Multiple Testing was controlled with: BY";			
