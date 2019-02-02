@@ -56,8 +56,8 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 
 	if windowSizeLocScale is not None:
 		wn_locscale = windowSizeLocScale;
-		if window_size is not None:
-			print("Window size for noise estimation is automatically set to the size of LocScale sliding window.");
+		if window_size is None:
+			wn = int(wn_locscale);
 	else:
 		wn_locscale = None;
 

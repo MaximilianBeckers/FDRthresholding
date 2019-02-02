@@ -74,7 +74,6 @@ def get_xyz_locs_and_indices_after_edge_cropping_and_masking(mask, wn):
     return xyz_locs, cropp_n_mask_ind, mask.shape;
 
 def prepare_mask_and_maps_for_scaling(emmap, modelmap, apix, wn_locscale, windowSize, method, locResMap, noiseBox):
-
     
     mask = np.zeros(emmap.shape);
         
@@ -94,11 +93,11 @@ def prepare_mask_and_maps_for_scaling(emmap, modelmap, apix, wn_locscale, window
     elif wn_locscale is not None:
         wn_locscale = int(math.ceil(wn_locscale / 2.) * 2);
    
-    wn = wn_locscale;
-    #if windowSize is None:
-    #   wn = wn_locscale;
-    #elif windowSize is not None: 
-    #    wn = int(math.ceil(windowSize / 2.) * 2);
+    #wn = wn_locscale;
+    if windowSize is None:
+        wn = wn_locscale;
+    elif windowSize is not None: 
+        wn = int(math.ceil(windowSize / 2.) * 2);
 	
     if method is not None:
         method = method;
@@ -110,7 +109,6 @@ def prepare_mask_and_maps_for_scaling(emmap, modelmap, apix, wn_locscale, window
     else:
         boxCoord = 0;
 
-   
     window_bleed_and_pad = check_for_window_bleeding(mask, wn_locscale);
     if window_bleed_and_pad:
         pad_int_emmap = compute_padding_average(emmap, mask);
@@ -136,8 +134,9 @@ def prepare_mask_and_maps_for_scaling(emmap, modelmap, apix, wn_locscale, window
 def compute_radial_profile(volFFT, frequencyMap):
 
     dim = volFFT.shape;
-    ps = np.abs(volFFT);
-    frequencies = np.linspace(0, 0.5, int(math.ceil(dim[0]/2.0)));
+    ps = np.real(np.abs(volFFT));
+    frequencies = np.fft.rfftfreq(dim[0]);
+    #frequencies = np.linspace(0, 0.5, int(math.ceil(dim[0]/2.0)));
     bins = np.digitize(frequencyMap, frequencies);
     bins = bins - 1;
     radial_profile = np.bincount(bins.ravel(), ps.ravel()) / np.bincount(bins.ravel())
@@ -150,16 +149,16 @@ def compute_scale_factors(em_profile, ref_profile):
     #scale_factor = (ref_profile**2/em_profile**2);
     #scale_factor[ ~ np.isfinite( scale_factor )] = 0 #handle division by zero
     #scale_factor = np.sqrt(scale_factor);
-    scale_factor = np.abs(ref_profile/em_profile);    
+    scale_factor = np.divide(np.abs(ref_profile), np.abs(em_profile));    
     scale_factor[ ~ np.isfinite( scale_factor )] = 0; #handle division by zero
 
     return scale_factor;
 
 def set_radial_profile(volFFT, scaleFactors, frequencies, frequencyMap, shape): 
-    
-    scalingMap = np.interp(frequencyMap, frequencies, scaleFactors, right=1.0);	
+
+    scalingMap = np.interp(frequencyMap, frequencies, scaleFactors);	
     scaledMapFFT = scalingMap * volFFT;
-    scaledMap = np.real(np.fft.irfftn(scaledMapFFT, shape));
+    scaledMap = np.real(np.fft.irfftn(scaledMapFFT, shape, norm='ortho'));
     
     return scaledMap, scaledMapFFT;
 
@@ -179,11 +178,12 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
     else:
         noiseMap = emmap[int(boxCoord[0]-0.5*wn +wn_locscale/2.0):(int(boxCoord[0]-0.5*wn + wn_locscale/2.0) + wn), int(boxCoord[1]-0.5*wn+ wn_locscale/2.0):(int(boxCoord[1]-0.5*wn + wn_locscale/2.0) + wn), (int(boxCoord[2]-0.5*wn + wn_locscale/2.0)):(int((boxCoord[2]-0.5*wn + wn_locscale/2.0)+wn))];
 
+
     #prepare noise map for scaling
     frequencyMap_noise = FDRutil.calculate_frequency_map(noiseMap);
-    noiseMapFFT = np.fft.rfftn(noiseMap);
+    noiseMapFFT = np.fft.rfftn(noiseMap, norm='ortho');
     noise_profile, frequencies_noise = compute_radial_profile(noiseMapFFT, frequencyMap_noise);
-
+    
     #prepare windows of particle for scaling
     frequencyMap_mapWindow = FDRutil.calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
 
@@ -202,22 +202,20 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
 
                 #crop windows
                 emmap_wn = emmap[k: k + wn_locscale, j: j + wn_locscale, i: i + wn_locscale];
-                modmap_wn = modmap[k: k + wn_locscale, j: j + wn_locscale, i: i + wn_locscale];
-                    
-                #do sharpening of the sliding window
-                emmap_wn_FFT = np.fft.rfftn(np.copy(emmap_wn));
-                modmap_wn_FFT = np.fft.rfftn(np.copy(modmap_wn));
+                modmap_wn = modmap[k: k + wn_locscale, j: j + wn_locscale, i: i + wn_locscale];                
 
+
+                #do sharpening of the sliding window
+                emmap_wn_FFT = np.fft.rfftn(np.copy(emmap_wn), norm='ortho');
+                modmap_wn_FFT = np.fft.rfftn(np.copy(modmap_wn), norm='ortho');
                 em_profile, frequencies_map = compute_radial_profile(emmap_wn_FFT, frequencyMap_mapWindow);
                 mod_profile, _ = compute_radial_profile(modmap_wn_FFT, frequencyMap_mapWindow);
                 scale_factors = compute_scale_factors(em_profile, mod_profile);
                 map_b_sharpened, map_b_sharpened_FFT = set_radial_profile(emmap_wn_FFT, scale_factors, frequencies_map, frequencyMap_mapWindow, emmap_wn.shape);
                   
-                #do interpolation of sharpening factors
-                scale_factors_noise = np.interp(frequencies_noise, frequencies_map, scale_factors);
 
                 #scale noise window with the interpolated scaling factors
-                mapNoise_sharpened, mapNoise_sharpened_FFT = set_radial_profile(np.copy(noiseMapFFT), scale_factors_noise, frequencies_noise, frequencyMap_noise, noiseMap.shape);
+                mapNoise_sharpened, mapNoise_sharpened_FFT = set_radial_profile(np.copy(noiseMapFFT), scale_factors, frequencies_map, frequencyMap_noise, noiseMap.shape);
 
                 #local filtering routines
                 if locFilt == True:
@@ -238,8 +236,8 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                     mean = np.mean(map_noise_sharpened_data);
                     var = np.var(map_noise_sharpened_data);
 
-                    if var < 0.05:
-                        var = 0.05;
+                    if var < 0.5:
+                        var = 0.5;
                         mean = 0.0;
                     if tmpRes == round(apix/100.0, 3):  
                         mean = 0.0;
@@ -257,8 +255,8 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
                                         
                     mean = np.mean(map_noise_sharpened_data);
                     var = np.var(map_noise_sharpened_data);
-                    if var < 0.05:
-                        var = 0.05;
+                    if var < 0.5:
+                        var = 0.5;
                         mean = 0.0;
 
                 #put values back into the the original maps

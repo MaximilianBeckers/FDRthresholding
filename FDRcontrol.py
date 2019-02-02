@@ -84,7 +84,7 @@ def main():
 			#load the maps
 			filename = args.em_map;
 			map1 = mrcfile.open(args.em_map, mode='r');
-			apix = map1.voxel_size.x;
+			apix = float(map1.voxel_size.x);
 			halfMapData1 = np.copy(map1.data);
 			
 			map2 = mrcfile.open(args.halfmap2, mode='r');
