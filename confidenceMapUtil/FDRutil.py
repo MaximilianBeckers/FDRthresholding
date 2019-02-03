@@ -277,21 +277,23 @@ def checkNormality(map, windowSize, boxCoord):
 		print(output);
 
 #------------------------------------------------------------------------------------
-def normalizeMap(map, mean, var):
+def studentizeMap(map, mean, var):
 	
 	#****************************************
 	#********* normalize map ****************
 	#****************************************
 	
 	if np.isscalar(var):
-		normMap = np.subtract(map, mean);
-		normMap = np.multiply(normMap, (1.0/(math.sqrt(var))));
+		studMap = np.subtract(map, mean);
+		studMap = np.multiply(studMap, (1.0/(math.sqrt(var))));
 	else: #if local variances are known, use them
-		var[var==0] = 1000;
-		normMap = np.subtract(map, mean);
-		normMap = np.divide(normMap, np.sqrt(var));
-
-	return normMap;
+		var[var == 0] = 1000;
+		studMap = np.subtract(map, mean);
+		studMap = np.divide(studMap, np.sqrt(var));
+		var[var == 1000] = 0.0;
+		studMap[var == 0.0] = 0.0;
+		
+	return studMap;
 
 
 #-----------------------------------------------------------------------------------
@@ -307,13 +309,13 @@ def calcQMap(map, mean, var, ECDF, windowSize, boxCoord, mask, method, test):
 	#calculate the test statistic
 	if np.isscalar(var):
 		#map[map == 0.0] = -100000000;
-		map = np.subtract(map, mean);   
-		tMap = np.multiply(map, (1.0/(math.sqrt(var))));
+		tmap = np.subtract(map, mean);   
+		tMap = np.multiply(tmap, (1.0/(math.sqrt(var))));
 		map = np.copy(tMap);
 	else:
 		var[var==0.0] = 1000.0; #just to avoid division by zero
-		map = np.subtract(map, mean); 	
-		tMap = np.divide(map, np.sqrt(var));
+		tmap = np.subtract(map, mean); 	
+		tMap = np.divide(tmap, np.sqrt(var));
 		var[var==1000.0] = 0.0;
 		#upadte the mask, necessary as resmap is masking as well
 		mask = np.multiply(mask,var);

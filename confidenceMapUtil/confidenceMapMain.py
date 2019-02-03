@@ -113,6 +113,8 @@ def calculateConfidenceMap(em_map, apix, noiseBox, testProc, ecdf, lowPassFilter
 	# calculate the qMap
 	qMap = FDRutil.calcQMap(em_map, mean, var, ECDF, wn, boxCoord, circularMaskData, method, testProc);
 
+	#em_map = FDRutil.studentizeMap(em_map, mean, var);
+
 	# if a explicit thresholding is wished, do so
 	if fdr is not None:
 
