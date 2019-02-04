@@ -188,6 +188,7 @@ def calculate_scaled_map(emmap, modmap, mask, wn, wn_locscale, apix, locFilt, lo
     frequencyMap_mapWindow = FDRutil.calculate_frequency_map(np.zeros((wn_locscale, wn_locscale, wn_locscale)));
 
     numSteps = len(range(0, sizeMap[0] - int(wn_locscale), stepSize))*len(range(0, sizeMap[1] - int(wn_locscale), stepSize))*len(range(0, sizeMap[2] - int(wn_locscale), stepSize));
+    print("Sart LocScale. This might take a minute ...");
     counterSteps = 0;
     for k in range(0, sizeMap[0] - int(wn_locscale), stepSize):
         for j in range(0, sizeMap[1] - int(wn_locscale), stepSize):
