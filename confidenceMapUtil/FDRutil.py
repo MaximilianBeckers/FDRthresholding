@@ -446,7 +446,10 @@ def pAdjust(pValues, method):
 			pAdjust[i] = max(prevPVal, tmpPVal);
 			prevPVal = pAdjust[i];
 		pAdjust[pAdjust>1.0] = 1.0;
-		
+	elif method == "Hochberg":
+		for i in range(numPVal-1, -1, -1):
+			pAdjust[i] = min(prevPVal, pSort[i]*(numPVal-i));
+			prevPVal = pAdjust[i];		
 	else:
 		print('Please specify a method. Execution is stopped ...');
 		quit();	
