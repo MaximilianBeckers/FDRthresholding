@@ -85,7 +85,7 @@ def localFiltration(map, locResMap, apix, localVariance, windowSize, boxCoord, E
 			#this resolution is obviously not in the map, so skip
 			counter = counter + 1;
 			continue;
-		elif round(tmpRes,3) == round(limRes,3):
+		elif math.fabs(tmpRes - limRes) < 0.0000001:
 			xInd, yInd, zInd = indices[0], indices[1], indices[2];
 			
 			#do local filtration
