@@ -1,6 +1,6 @@
 # False discovery rate control of cryo-EM maps
 
-*This tool is now also incorporated in the CCP-EM software, with some improved utilities for easier usage. Thus, please think about installing CCP-EM instead from https://www.ccpem.ac.uk/download.php*
+*This tool has now been contributed to the CCP-EM software, with some improved utilities for easier usage. Thus, please think about installing CCP-EM instead from https://www.ccpem.ac.uk/download.php*
 
 Confidence maps are complementary maps generated from cryo-EM maps by means of statistical hypothesis testing and subsequent FDR control. They allow thresholding of EM maps based on the expected amount of background noise visible at the respective threshold and thus allow rigorous error assessment of visible features in the density. 
 Additional post-processing like local filtering or local amplitude scaling (LocScale) can be incorporated in the framework in order to increase the statistical power.
